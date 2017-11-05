@@ -51,7 +51,7 @@ def split(target,pieces=0):
         for i in range(1,100):
             if i*height*width_fraction/height_fraction > width/i:
                 break
-        pieces = i
+        pieces = i + i%2
         
     new_width = round(width/pieces)
 
@@ -97,49 +97,33 @@ def split_then_stack(target,pieces=0):
     cleanUp(files)
     return stacked
 
-def overlay(target,text,color):      
+def overlay(target,text,color,x,y):      
     img = Image.open(target)
     width, height = img.size
-    lines = string.split(text,'\n')
-    max_chars = 0
-    for line in lines:
-        if max_chars < len(line):
-            max_chars = len(line)
 
-    character_count = max_chars
-    padding = 6
-
-    bigHeight = int(round(1.5*width/(character_count+padding),0))
+    bigHeight = 40
     bigFont = ImageFont.truetype("Courier Prime Code.ttf", bigHeight)
     drawFile = ImageDraw.Draw(img)
-    drawFile.text((width/10, height/10),text,color,font=bigFont) # 1/10 from upper left corner
+    drawFile.text((x, y),text,color,font=bigFont) # 1/10 from upper left corner
     output_file_name = target[:-4] + '_overlay.png'
     img.save(output_file_name, "PNG")
 
     print '\nOverlaid.'
     return output_file_name
 
-def overlayLines(target,lines,line_colors):      
+def overlayLines(target,lines,line_colors,x,y):      
     img = Image.open(target)
     width, height = img.size
 
-    max_chars = 0
-    for line in lines:
-        if max_chars < len(line):
-            max_chars = len(line)
-
-    character_count = max_chars
-    padding = 6
-
-    bigHeight = 40#int(round(1.5*width/(character_count+padding),0))
+    bigHeight = 40
     bigFont = ImageFont.truetype("Courier Prime Code.ttf", bigHeight)
     drawFile = ImageDraw.Draw(img)
     LINE_OFFSET = bigHeight
     offset = 0
     for i,line in enumerate(lines):
-        drawFile.text((bigHeight, offset + bigHeight),line,line_colors[i],font=bigFont) # 1/10 from upper left corner
+        drawFile.text((x, y + offset),line,line_colors[i],font=bigFont) # 1/10 from upper left corner
         offset += LINE_OFFSET
-    output_file_name = target[:-4] + '_overlay.png'
+    output_file_name = target[:-4] + '_overlay_lines.png'
     img.save(output_file_name, "PNG")
 
     print '\nOverlaid.'
@@ -180,11 +164,16 @@ if __name__ == '__main__':
     line_colors.append(colors[1])
     text.append('Line 3')
     line_colors.append(colors[2])
-    output_file_name = overlayLines(target,text,line_colors)
-    openImage(output_file_name)    
+    output_file_name_1 = overlayLines(target,text,line_colors,100,10)
+    openImage(output_file_name_1)    
+
+    output_file_name_2 = overlay(target,text[0],line_colors[0],100,10)
+    openImage(output_file_name_2)   
 
     stacked = split_then_stack(target,3)
     openImage(stacked)    
-    time.sleep(.5)
-    cleanUp(output_file_name)
+    time.sleep(3)
+    cleanUp(output_file_name_1)
+    cleanUp(output_file_name_2)
     cleanUp(stacked)
+    

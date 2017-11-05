@@ -19,8 +19,25 @@ import git_info
 import image_tools
 
 SOURCE_FOLDER = "." 
-SOURCE_FOLDER = "/Users/ryanz/Desktop/lib-nilon"
 MAX_FILES = 4000
+
+MAX_TOTAL_HEIGHT = 10000
+HORIZONTAL_GAP = 200
+hOffset = 40
+ROW_OFFSET = 20
+COLUMN_OFFSET = HORIZONTAL_GAP
+MAX_FOLDER_FILES = MAX_FILES
+MAX_TOTAL_WIDTH =1000000 #65000
+MAX_TXT_DIMENSION = 6000
+
+bigHeight = 100
+titleHeight = 20
+charHeight = 3
+charWidth = 1
+MAX_CHARS = 96
+MAX_WIDTH = MAX_CHARS * charWidth
+MAX_LINES = 200#500
+MAX_HEIGHT = MAX_LINES * charHeight
 
 ROTATION = 0
 SCALE_DIV = 1
@@ -73,46 +90,21 @@ def getAuthorIndex(author):
         author_lines[author] += 1
     return authors[author]
 
-def main(targets, outputName):      
-    print '\n ' + outputName
-    bigHeight = 100
-    titleHeight = 20
-    charHeight = 3
-    charWidth = 1
-    MAX_CHARS = 96
-    MAX_WIDTH = MAX_CHARS * charWidth
-    MAX_LINES = 200#500
-    MAX_HEIGHT = MAX_LINES * charHeight
-    MAX_TOTAL_HEIGHT = 10000
-    HORIZONTAL_GAP = 200
-    hOffset = 0
-    ROW_OFFSET = 20
-    COLUMN_OFFSET = 200
-    MAX_FOLDER_FILES = MAX_FILES
-    MAX_TOTAL_WIDTH =1000000 #65000
-    MAX_TXT_DIMENSION = 6000
-    
+def getAllFiles(targets):
     allFiles = []
-    foldersCount = 0
     for target in targets:
         for root, dirs, files in os.walk(target, topdown=True):
-            found = False
             files.sort()
-            for name in files[:MAX_FOLDER_FILES]:
-                if (name[-3:] == '.md' or name[-2:] == '.c' or name[-2:] == '.h' or name[-3:] == '.py') and 'BlueNRG' not in root:
-                    if not found:
-                        found = True
-                        foldersCount +=1
+            for name in files[:MAX_FOLDER_FILES]: # or name[-2:] == '.h' 
+                if (name[-3:] == '.md' or name[-2:] == '.c' or name[-3:] == '.py') and 'BlueNRG' not in root:
                     allFiles.append((os.path.join(root, name)))
                     if len(allFiles) >= MAX_FILES:
                         break
             if len(allFiles)-1 >= MAX_FILES:
                 break
-     
-    filesCount = len(allFiles)
-    if filesCount == 0:
-        print 'no files'
-        return None
+    return allFiles
+
+def getMaxLengthInFiles(allFiles):
     maxLengthInFiles = 0
     maxLinesInFiles = 0
     for f in allFiles:
@@ -123,12 +115,27 @@ def main(targets, outputName):
         for y, line in enumerate(source):    
             if len(line) > maxLengthInFiles:
                 maxLengthInFiles = len(line)
-                
-    print 'Number of folders: ' + str(foldersCount)
+    return(maxLengthInFiles, maxLinesInFiles)
+
+def main(targets, outputName):      
+    print '\n ' + outputName
+    
+    allFiles = getAllFiles(targets)
+     
+    filesCount = len(allFiles)
+    if filesCount == 0:
+        print 'no files'
+        return None
+
+    maxLengthInFiles, maxLinesInFiles = getMaxLengthInFiles(allFiles)      
+
     print 'Number of files: ' + str(filesCount)
     print 'Max lines: ' + str(maxLinesInFiles)
     print 'Max length: ' + str(maxLengthInFiles)
     
+    blanks = 3 + (filesCount + 3)%2
+    print 'blanks: ' + str(blanks)
+
     widest = maxLengthInFiles * charWidth 
     if widest > MAX_WIDTH:
         widest = MAX_WIDTH
@@ -143,50 +150,52 @@ def main(targets, outputName):
     if imgHeight > MAX_TOTAL_HEIGHT:
         imgHeight = MAX_TOTAL_HEIGHT
         print 'Height maxed out'
-    imgWidth = 2*COLUMN_OFFSET + filesCount*widest + (filesCount-1)*HORIZONTAL_GAP # Height of image is widest file x number of files
-    if imgWidth > MAX_TOTAL_WIDTH:
-        imgWidth = MAX_TOTAL_WIDTH
-        print 'Width maxed out'    
+    
+    xOffsets = []
+    xOffsets.append(0)#COLUMN_OFFSET/2)
+    for _ in range(filesCount + blanks):
+        xOffsets.append(widest+HORIZONTAL_GAP)
+    xOffsets.append(0)#COLUMN_OFFSET/2)
+    
+    imgWidth = 0
+    for offset in xOffsets:
+        imgWidth += offset
+    # if imgWidth > MAX_TOTAL_WIDTH:
+    #     imgWidth = MAX_TOTAL_WIDTH
+    #     print 'Width maxed out'    
     img = Image.new("RGBA", (imgWidth, imgHeight),background)
     drawFileImg = ImageDraw.Draw(img)
     font = ImageFont.truetype("Courier Prime Code.ttf", charHeight)
     titleFont = ImageFont.truetype("Courier Prime Code.ttf", titleHeight)
     bigFont = ImageFont.truetype("Courier Prime Code.ttf", bigHeight)
     print 'Image dimensions: ' + str(imgWidth) + ' x ' + str(imgHeight)
-    
-    full_column = imgWidth/filesCount
-    full_row = imgHeight
 
-    if full_column > full_row:
-        longest = full_column
-    else:
-        longest = full_row
-   
-    print 'Canvas: ' + str(longest)
-
-    cwidth = longest # canvas need to be able to rotate biggest image
-    cheight = longest 
+    cwidth = imgWidth 
+    cheight = imgHeight 
     rowOffset = ROW_OFFSET
-    columnOffset = COLUMN_OFFSET
     oldDirName = os.path.dirname(allFiles[0])
 
-    imgFile = Image.new("RGBA", (cheight, cwidth),background) 
-    box = (0, 0, widest + HORIZONTAL_GAP, tallest)
-    region = imgFile.crop(box)
-    img.paste(region, box)
-    columnOffset += (widest + HORIZONTAL_GAP)  
+    j = 0
+    columnOffset = xOffsets[j]
+    j += 1
+
+    for _ in range( blanks ):
+        # box = (0, 0, widest + HORIZONTAL_GAP, tallest)
+        # region = imgFile.crop(box)
+        # img.paste(region, box)
+        columnOffset += xOffsets[j]
+        j+=1
 
     for i,f in enumerate(allFiles):
         x = 0
-        imgFile = Image.new("RGBA", (cheight, cwidth),background)        
-        drawFile = ImageDraw.Draw(imgFile)
-        
+        imgFile = Image.new("RGBA", (cheight, cwidth),background) 
+        drawFile = ImageDraw.Draw(imgFile)    
         sys.stdout.write("\r {0} {1}                         ".format(str(i), str(f)))
         sys.stdout.flush()
         source = processFile(f)       
 
         name = str(os.path.split(f)[1])
-        drawFile.text((0, 0),name,greenish,font=titleFont)
+        drawFile.text((hOffset, 0),name,greenish,font=titleFont)
         vOffset = titleHeight * 2
 
         for y, line in enumerate(source):
@@ -197,17 +206,19 @@ def main(targets, outputName):
                 author_index = getAuthorIndex(author)
                 author_index = author_index % len(colors)
                 author_color = colors[author_index]
-                drawFile.text((hOffset+x, vOffset + charHeight*y),line,author_color,font=font)
+                drawFile.text((hOffset+x, vOffset + charHeight*y),line[:MAX_CHARS],author_color,font=font)
 
         # The box is a 4-tuple defining the left, upper, right, and lower pixel coordinate.
         # The Python Imaging Library uses a coordinate system with (0, 0) in the upper left corner.
         box = (0, 0, widest + HORIZONTAL_GAP, tallest)
         region = imgFile.crop(box)
-
+        del imgFile
+        del drawFile
         box = (0+columnOffset, 0 + rowOffset, widest + HORIZONTAL_GAP + columnOffset, tallest + rowOffset)
         img.paste(region, box)
 
-        columnOffset += (widest + HORIZONTAL_GAP)                     
+        columnOffset += xOffsets[j]           
+        j+=1
 
     width, height = img.size
     if SCALE_DIV > 1:
@@ -229,7 +240,7 @@ def processFile(filename):
     data = f.read()
     f.close()
     databyline = string.split(data, '\n')
-    return databyline
+    return databyline[:MAX_LINES]
 
 if __name__ == '__main__':
     targets = []
@@ -237,7 +248,6 @@ if __name__ == '__main__':
     folders =  os.listdir(target)   
     images = []
     base = git_info.getBaseRepoName(target)
-    print base
     output_file_name = base + '.png'
 
     wide_file_name = 'wide.png'
@@ -256,7 +266,9 @@ if __name__ == '__main__':
         author_color = authors[author] % len(colors)
         line_colors.append(colors[author_color])
     
-    overlay_file_name = image_tools.overlayLines(stacked_file_name, text, line_colors)
+    x = 100
+    y = ROW_OFFSET
+    overlay_file_name = image_tools.overlayLines(stacked_file_name, text, line_colors, x, y)
     image_tools.cleanUp(stacked_file_name)
 
     image_tools.rename(overlay_file_name,output_file_name)
