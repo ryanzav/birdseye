@@ -20,7 +20,7 @@ import image_tools
 
 SOURCE_FOLDER = "." 
 # SOURCE_FOLDER = '/Users/ryanz/Desktop/lib-nilon'
-# SOURCE_FOLDER = '/Users/ryanz/Desktop/devices-nlight-air-sub-ghz'
+SOURCE_FOLDER = '/Users/ryanz/Desktop/devices-nlight-air-sub-ghz'
 MAX_FILES = 4000
 
 MAX_TOTAL_HEIGHT = 10000
@@ -92,13 +92,27 @@ def getAuthorIndex(author):
         author_lines[author] += 1
     return authors[author]
 
+def filterFiles(root, name):
+    if 'mirror' in root:
+        return False
+    if 'TraceRecorder' in root:
+        return False 
+    if 'mbedtls' in root:
+        return False 
+    if 'mock' in root or 'mock' in name:
+        return False                
+    if (name[-3:] == '.md' or name[-2:] == '.c' or name[-3:] == '.py'):
+        return True
+    else:
+        return False
+
 def getAllFiles(targets):
     allFiles = []
     for target in targets:
         for root, dirs, files in os.walk(target, topdown=True):
             files.sort()
             for name in files[:MAX_FOLDER_FILES]: # or name[-2:] == '.h' 
-                if (name[-3:] == '.md' or name[-2:] == '.c' or name[-3:] == '.py') and 'BlueNRG' not in root:
+                if filterFiles(root, name):             
                     allFiles.append((os.path.join(root, name)))
                     if len(allFiles) >= MAX_FILES:
                         break
@@ -160,9 +174,7 @@ def main(targets, outputName):
     imgWidth = 0
     for offset in xOffsets:
         imgWidth += offset
-    # if imgWidth > MAX_TOTAL_WIDTH:
-    #     imgWidth = MAX_TOTAL_WIDTH
-    #     print 'Width maxed out'    
+
     img = Image.new("RGBA", (imgWidth, imgHeight),background)
     drawFileImg = ImageDraw.Draw(img)
     font = ImageFont.truetype("Courier Prime Code.ttf", charHeight)
@@ -198,14 +210,13 @@ def main(targets, outputName):
         drawFile.text((hOffset, 0),name,greenish,font=titleFont)
         vOffset = titleHeight * 2
 
-        for y, line in enumerate(source):
+        for y, line in enumerate(source[:MAX_LINES]):            
             if y + 1 < len(source):
                 author = git_info.getAuthor(f,y)
                 author_index = getAuthorIndex(author)
                 author_index = author_index % len(colors)
                 author_color = colors[author_index]
-                if y < MAX_LINES:                
-                    drawFile.text((hOffset+x, vOffset + charHeight*y),line[:MAX_CHARS],author_color,font=font)
+                drawFile.text((hOffset+x, vOffset + charHeight*y),line[:MAX_CHARS],author_color,font=font)
 
         # The box is a 4-tuple defining the left, upper, right, and lower pixel coordinate.
         # The Python Imaging Library uses a coordinate system with (0, 0) in the upper left corner.
@@ -236,7 +247,7 @@ def processFile(filename):
     except IOError:
         return
 
-    data = f.read()
+    data = f.read(8000)
     f.close()
     databyline = string.split(data, '\n')
     return databyline
