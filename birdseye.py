@@ -19,6 +19,8 @@ import git_info
 import image_tools
 
 SOURCE_FOLDER = "." 
+# SOURCE_FOLDER = '/Users/ryanz/Desktop/lib-nilon'
+# SOURCE_FOLDER = '/Users/ryanz/Desktop/devices-nlight-air-sub-ghz'
 MAX_FILES = 4000
 
 MAX_TOTAL_HEIGHT = 10000
@@ -118,8 +120,6 @@ def getMaxLengthInFiles(allFiles):
     return(maxLengthInFiles, maxLinesInFiles)
 
 def main(targets, outputName):      
-    print '\n ' + outputName
-    
     allFiles = getAllFiles(targets)
      
     filesCount = len(allFiles)
@@ -199,14 +199,13 @@ def main(targets, outputName):
         vOffset = titleHeight * 2
 
         for y, line in enumerate(source):
-            if y > MAX_LINES:
-                break
             if y + 1 < len(source):
                 author = git_info.getAuthor(f,y)
                 author_index = getAuthorIndex(author)
                 author_index = author_index % len(colors)
                 author_color = colors[author_index]
-                drawFile.text((hOffset+x, vOffset + charHeight*y),line[:MAX_CHARS],author_color,font=font)
+                if y < MAX_LINES:                
+                    drawFile.text((hOffset+x, vOffset + charHeight*y),line[:MAX_CHARS],author_color,font=font)
 
         # The box is a 4-tuple defining the left, upper, right, and lower pixel coordinate.
         # The Python Imaging Library uses a coordinate system with (0, 0) in the upper left corner.
@@ -240,7 +239,7 @@ def processFile(filename):
     data = f.read()
     f.close()
     databyline = string.split(data, '\n')
-    return databyline[:MAX_LINES]
+    return databyline
 
 if __name__ == '__main__':
     targets = []
