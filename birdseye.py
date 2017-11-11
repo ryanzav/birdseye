@@ -19,9 +19,9 @@ import git_info
 import image_tools
 
 SOURCE_FOLDER = "." 
-# SOURCE_FOLDER = '/Users/ryanz/Desktop/lib-nilon'
+#SOURCE_FOLDER = '/Users/ryanz/Desktop/lib-nilon'
 SOURCE_FOLDER = '/Users/ryanz/Desktop/devices-nlight-air-sub-ghz'
-MAX_FILES = 4000
+MAX_FILES = 30000
 
 MAX_TOTAL_HEIGHT = 10000
 HORIZONTAL_GAP = 200
@@ -49,8 +49,9 @@ bluish = (77,77,255,255)
 black = (0,0,0,255)
 white = (255,255,255,255)
 darkblue = (0,0,40,255)
-background = darkblue
 transparent = (0,0,0,0)
+background = darkblue
+
 
 colors = [(77,77,255,255), #bluish
         (230,25,75,255), # red
@@ -166,10 +167,8 @@ def main(targets, outputName):
         print 'Height maxed out'
     
     xOffsets = []
-    xOffsets.append(0)#COLUMN_OFFSET/2)
     for _ in range(filesCount + blanks):
         xOffsets.append(widest+HORIZONTAL_GAP)
-    xOffsets.append(0)#COLUMN_OFFSET/2)
     
     imgWidth = 0
     for offset in xOffsets:
@@ -188,9 +187,7 @@ def main(targets, outputName):
     oldDirName = os.path.dirname(allFiles[0])
 
     j = 0
-    columnOffset = xOffsets[j]
-    j += 1
-
+    columnOffset = 0
     for _ in range( blanks ):
         # box = (0, 0, widest + HORIZONTAL_GAP, tallest)
         # region = imgFile.crop(box)
@@ -210,7 +207,9 @@ def main(targets, outputName):
         drawFile.text((hOffset, 0),name,greenish,font=titleFont)
         vOffset = titleHeight * 2
 
-        for y, line in enumerate(source[:MAX_LINES]):            
+        for y, line in enumerate(source[:MAX_LINES]):  
+            if len( line.strip() ) == 0:
+                continue          
             if y + 1 < len(source):
                 author = git_info.getAuthor(f,y)
                 author_index = getAuthorIndex(author)
@@ -231,6 +230,16 @@ def main(targets, outputName):
         j+=1
 
     width, height = img.size
+
+    width_fraction = 16.
+    height_fraction = 9.
+    for i in range(1,100):
+        if i*height*width_fraction/height_fraction > width/i: 
+            break # Find the number of pieces to cut the wide image into such that stacking them give a 16:9 ratio.
+    pieces = i
+
+    print 'Pieces: ' + str(pieces)
+
     if SCALE_DIV > 1:
         img = img.resize((int(round(width/SCALE_DIV)),int(round(height/SCALE_DIV))), Image.ANTIALIAS)
     enhancer = (ImageEnhance.Color(img))
@@ -239,7 +248,7 @@ def main(targets, outputName):
     img = enhancer.enhance(2)    
     img.save(outputName, "PNG")
     print '\nfin'
-    return outputName
+    return pieces
 
 def processFile(filename):
     try:
@@ -261,10 +270,11 @@ if __name__ == '__main__':
     output_file_name = base + '.png'
 
     wide_file_name = 'wide.png'
-    main([target], wide_file_name)
+    pieces = main([target], wide_file_name)
     print authors
     print author_lines
-    stacked_file_name = image_tools.split_then_stack(wide_file_name)
+        
+    stacked_file_name = image_tools.split_then_stack(wide_file_name,pieces)
     image_tools.cleanUp(wide_file_name)
 
     text = []
