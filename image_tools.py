@@ -97,11 +97,11 @@ def split_then_stack(target,pieces=0):
     cleanUp(files)
     return stacked
 
-def overlay(target,text,color,x,y):      
+def overlay(target,text,color,x,y,font_height=40):      
     img = Image.open(target)
     width, height = img.size
 
-    bigHeight = 40
+    bigHeight = font_height
     bigFont = ImageFont.truetype("Courier Prime Code.ttf", bigHeight)
     drawFile = ImageDraw.Draw(img)
     drawFile.text((x, y),text,color,font=bigFont) # 1/10 from upper left corner
@@ -111,11 +111,47 @@ def overlay(target,text,color,x,y):
     print '\nOverlaid.'
     return output_file_name
 
-def overlayLines(target,lines,line_colors,x,y):      
+def getCentered(whole,insert_size):
+    remainder = whole - insert_size
+    return(remainder/2) 
+
+def getLongest(lines):
+    longest = 0
+    for line in lines:
+        if longest < len(line):
+            longest = len(line)
+    return longest
+
+def overlayLines(target,lines,line_colors,font_height=None,x=None,y=None):      
+    insert_fraction = 3
     img = Image.open(target)
     width, height = img.size
 
-    bigHeight = 40
+    if font_height == None:
+        insert_size = height/insert_fraction
+        line_count = len(lines)
+        font_height_1 = insert_size/line_count            
+
+        insert_size = width/insert_fraction
+        char_count = getLongest(lines)            
+        font_height_2 = 2*insert_size/char_count # The height is 2x char width.
+
+        if font_height_1 < font_height_2:
+            font_height = font_height_1
+        else:
+            font_height = font_height_2         
+    
+    if x == None:
+        longest = getLongest(lines)
+        insert_width = longest * font_height/2
+        x = getCentered(width, insert_width)
+
+    if y == None:
+        line_count = len(lines)
+        insert_height = line_count * font_height
+        y = getCentered(height, insert_height)
+
+    bigHeight = font_height
     bigFont = ImageFont.truetype("Courier Prime Code.ttf", bigHeight)
     drawFile = ImageDraw.Draw(img)
     LINE_OFFSET = bigHeight
@@ -164,7 +200,7 @@ if __name__ == '__main__':
     line_colors.append(colors[1])
     text.append('Line 3')
     line_colors.append(colors[2])
-    output_file_name_1 = overlayLines(target,text,line_colors,100,10)
+    output_file_name_1 = overlayLines(target,text,line_colors)
     openImage(output_file_name_1)    
 
     output_file_name_2 = overlay(target,text[0],line_colors[0],100,10)

@@ -36,6 +36,50 @@ def getRepo(folder):
     os.chdir(cwd)    
     return response
 
+def getFileCount(folder):
+    cmd = 'git ls-files | wc -l'
+    cwd = os.getcwd()
+    os.chdir(folder)    
+    try:
+        response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
+    except subprocess.CalledProcessError as e:
+        print e.output
+        reponse = ''        
+    os.chdir(cwd)    
+    return string.strip(response)
+
+def getLineCount(folder):
+    cmd = 'git ls-files | xargs wc -l'
+    cwd = os.getcwd()
+    os.chdir(folder)    
+    try:
+        response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
+    except subprocess.CalledProcessError as e:
+        print e.output
+        reponse = ''        
+    os.chdir(cwd)    
+    response = response[:-1].split('\n')
+    return response[-1]
+
+def getLastCommit(folder):
+    cmd = 'git log -1 --date=rfc'
+    cwd = os.getcwd()
+    os.chdir(folder)    
+    try:
+        response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
+    except subprocess.CalledProcessError as e:
+        print e.output
+        reponse = ''        
+    os.chdir(cwd)    
+    return response
+
+def getLastCommitDate(folder):
+    msg = getLastCommit(folder)
+    lines = msg.split('\n')
+    return lines[2]
+
+
+
 def parseRepo(url):
     splat = string.split(url,'/')
     splat = string.split(splat[-1],'.')
@@ -49,12 +93,26 @@ def getBaseRepoName(folder):
 
 if __name__ == '__main__':
    # f = "/Users/ryanz/Desktop/devices-nlight-air-sub-ghz/common/BLE-ctrl/BLE-task.c"
-    f = "/Users/ryanz/Desktop/lib-nilon/nilon_log.py"
+    f = "/Users/ryanz/Desktop/lib-nilon/nlight.py"
     folder = os.path.split(f)[0]
     line = 20
     print getAuthor(f,line)
+
+    print 'lines: ' + getLineCount(folder)
+
+    file_count = getFileCount(folder)
+    print file_count
+
+    last_commit = getLastCommit(folder)
+    print last_commit
+
+    last_commit_date = getLastCommitDate(folder)
+    print last_commit_date
+
     repo = getRepo(folder)
     print repo
+    
+
     base = parseRepo(repo)
     print base
     print getBaseRepoName(folder)

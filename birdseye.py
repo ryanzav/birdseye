@@ -288,11 +288,25 @@ if __name__ == '__main__':
     
     x = 100
     y = ROW_OFFSET
-    overlay_file_name = image_tools.overlayLines(stacked_file_name, text, line_colors, x, y)
+    overlay_file_name = image_tools.overlayLines(stacked_file_name, text, line_colors, 40, x, y)
     image_tools.cleanUp(stacked_file_name)
+    
+    text = []
+    line_colors = []
+    text.append(git_info.getBaseRepoName(target))
+    line_colors.append(white)
+    text.append(git_info.getLastCommitDate(target))
+    line_colors.append(white)
+    text.append("File count: " + git_info.getFileCount(target))
+    line_colors.append(white)
+    text.append((git_info.getLineCount(target) + " lines").strip())
+    line_colors.append(white)
 
+    overlay_file_name = image_tools.overlayLines(overlay_file_name, text, line_colors)        
     image_tools.rename(overlay_file_name,output_file_name)
+    image_tools.cleanUp(overlay_file_name)
     image_tools.openImage(output_file_name)
+
     exit()
 
     
