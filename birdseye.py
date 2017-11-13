@@ -19,9 +19,19 @@ import git_info
 import image_tools
 
 SOURCE_FOLDER = "." 
-#SOURCE_FOLDER = '/Users/ryanz/Desktop/lib-nilon'
-SOURCE_FOLDER = '/Users/ryanz/Desktop/devices-nlight-air-sub-ghz'
+SOURCE_FOLDER = '/Users/ryanz/Desktop/lib-nilon'
+#SOURCE_FOLDER = '/Users/ryanz/Desktop/devices-nlight-air-sub-ghz'
+
+CORNER_TEXT = False
+CENTER_TEXT = True
+
+OVERRIDE_FONT = None
+OVERRIDE_X = None
+OVERRIDE_Y = None
+
 MAX_FILES = 30000
+
+MIN_BLANKS = 0
 
 MAX_TOTAL_HEIGHT = 10000
 HORIZONTAL_GAP = 200
@@ -53,7 +63,7 @@ transparent = (0,0,0,0)
 background = darkblue
 
 
-colors = [(77,77,255,255), #bluish
+colors = [
         (230,25,75,255), # red
         (60,180,75,255), # green
         (255,225,25,255), # yellow
@@ -134,38 +144,36 @@ def getMaxLengthInFiles(allFiles):
                 maxLengthInFiles = len(line)
     return(maxLengthInFiles, maxLinesInFiles)
 
-def main(targets, outputName):      
-    allFiles = getAllFiles(targets)
-     
+def extractFileMetrics(allFiles):
     filesCount = len(allFiles)
     if filesCount == 0:
         print 'no files'
         return None
-
+    
     maxLengthInFiles, maxLinesInFiles = getMaxLengthInFiles(allFiles)      
 
     print 'Number of files: ' + str(filesCount)
     print 'Max lines: ' + str(maxLinesInFiles)
     print 'Max length: ' + str(maxLengthInFiles)
     
-    blanks = 3 + (filesCount + 3)%2
-    print 'blanks: ' + str(blanks)
+    blanks = MIN_BLANKS + (filesCount + MIN_BLANKS)%2
+    print 'Blanks pages to be inserted: ' + str(blanks)
 
     widest = maxLengthInFiles * charWidth 
     if widest > MAX_WIDTH:
         widest = MAX_WIDTH
-        print 'Width too wide.'
+        print 'Limiting file width.'
     
     tallest = maxLinesInFiles * charHeight
     if tallest > MAX_HEIGHT:
         tallest = MAX_HEIGHT
-        print 'Height too tall.'
+        print 'Limiting file height.'
     
     imgHeight = 2*ROW_OFFSET + (tallest + ROW_OFFSET) 
     if imgHeight > MAX_TOTAL_HEIGHT:
         imgHeight = MAX_TOTAL_HEIGHT
-        print 'Height maxed out'
-    
+        print 'Total height maxed out'
+
     xOffsets = []
     for _ in range(filesCount + blanks):
         xOffsets.append(widest+HORIZONTAL_GAP)
@@ -173,6 +181,41 @@ def main(targets, outputName):
     imgWidth = 0
     for offset in xOffsets:
         imgWidth += offset
+
+    return(filesCount, blanks, widest, tallest, imgWidth, imgHeight, xOffsets)
+    
+def drawText(f,imgWidth, imgHeight, font, titleFont,titleHeight,charHeight,hOffset,widest,tallest):
+    imgFile = Image.new("RGBA", (imgWidth, imgHeight),background) 
+    drawFile = ImageDraw.Draw(imgFile)    
+    sys.stdout.write("\r{0}                         ".format(str(f)))
+    sys.stdout.flush()
+
+    source = processFile(f)       
+
+    name = str(os.path.split(f)[1])
+    drawFile.text((hOffset, 0),name,greenish,font=titleFont)
+    vOffset = titleHeight * 2
+    
+    x = 0
+    for y, line in enumerate(source[:MAX_LINES]):  
+        if len( line.strip() ) == 0:
+            continue          
+        if y + 1 < len(source):
+            author = git_info.getAuthor(f,y)
+            author_index = getAuthorIndex(author)
+            author_index = author_index % len(colors)
+            author_color = colors[author_index]
+            drawFile.text((hOffset+x, vOffset + charHeight*y),line[:MAX_CHARS],author_color,font=font)
+
+    # The box is a 4-tuple defining the left, upper, right, and lower pixel coordinate.
+    # The Python Imaging Library uses a coordinate system with (0, 0) in the upper left corner.
+    box = (0, 0, widest + HORIZONTAL_GAP, tallest)
+    region = imgFile.crop(box)
+    del imgFile
+    del drawFile
+    return region
+
+def drawImage(output_file_name, allFiles, filesCount, blanks, widest, tallest, imgWidth, imgHeight, xOffsets):
 
     img = Image.new("RGBA", (imgWidth, imgHeight),background)
     drawFileImg = ImageDraw.Draw(img)
@@ -184,7 +227,6 @@ def main(targets, outputName):
     cwidth = imgWidth 
     cheight = imgHeight 
     rowOffset = ROW_OFFSET
-    oldDirName = os.path.dirname(allFiles[0])
 
     j = 0
     columnOffset = 0
@@ -195,42 +237,19 @@ def main(targets, outputName):
         columnOffset += xOffsets[j]
         j+=1
 
+    print 'Processing files...'
     for i,f in enumerate(allFiles):
-        x = 0
-        imgFile = Image.new("RGBA", (cheight, cwidth),background) 
-        drawFile = ImageDraw.Draw(imgFile)    
-        sys.stdout.write("\r {0} {1}                         ".format(str(i), str(f)))
-        sys.stdout.flush()
-        source = processFile(f)       
-
-        name = str(os.path.split(f)[1])
-        drawFile.text((hOffset, 0),name,greenish,font=titleFont)
-        vOffset = titleHeight * 2
-
-        for y, line in enumerate(source[:MAX_LINES]):  
-            if len( line.strip() ) == 0:
-                continue          
-            if y + 1 < len(source):
-                author = git_info.getAuthor(f,y)
-                author_index = getAuthorIndex(author)
-                author_index = author_index % len(colors)
-                author_color = colors[author_index]
-                drawFile.text((hOffset+x, vOffset + charHeight*y),line[:MAX_CHARS],author_color,font=font)
-
-        # The box is a 4-tuple defining the left, upper, right, and lower pixel coordinate.
-        # The Python Imaging Library uses a coordinate system with (0, 0) in the upper left corner.
-        box = (0, 0, widest + HORIZONTAL_GAP, tallest)
-        region = imgFile.crop(box)
-        del imgFile
-        del drawFile
+        region = drawText(f,imgWidth, imgHeight, font, titleFont,titleHeight,charHeight,hOffset,widest,tallest)
         box = (0+columnOffset, 0 + rowOffset, widest + HORIZONTAL_GAP + columnOffset, tallest + rowOffset)
         img.paste(region, box)
-
         columnOffset += xOffsets[j]           
         j+=1
 
-    width, height = img.size
+    print 
+    print authors
+    print author_lines
 
+    width, height = img.size
     width_fraction = 16.
     height_fraction = 9.
     for i in range(1,100):
@@ -246,9 +265,11 @@ def main(targets, outputName):
     img = enhancer.enhance(1.6)
     enhancer = (ImageEnhance.Brightness(img))
     img = enhancer.enhance(2)    
-    img.save(outputName, "PNG")
-    print '\nfin'
-    return pieces
+    img.save(output_file_name, "PNG")
+           
+    stacked_file_name = image_tools.split_then_stack(output_file_name,pieces)
+
+    return stacked_file_name
 
 def processFile(filename):
     try:
@@ -261,53 +282,62 @@ def processFile(filename):
     databyline = string.split(data, '\n')
     return databyline
 
-if __name__ == '__main__':
-    targets = []
+def cornerText(target, working_file_name):
+    if CORNER_TEXT:
+        text = []
+        line_colors = []
+        line_colors.append(greenish)
+        text.append(git_info.getBaseRepoName(target))
+        for author in sorted( authors):
+            text.append(author + ' ' + str(author_lines[author]))
+            author_color = authors[author] % len(colors)
+            line_colors.append(colors[author_color])
+        x = 100
+        y = ROW_OFFSET
+        working_file_name = image_tools.overlayLines(working_file_name, text, line_colors, 40, x, y)
+    return working_file_name
+
+def centerText(target, working_file_name):
+  if CENTER_TEXT: 
+        text = []
+        line_colors = []
+        text.append(git_info.getBaseRepoName(target))
+        line_colors.append(white)
+        text.append(git_info.getLastCommitDate(target))
+        line_colors.append(white)
+        text.append("File count: " + git_info.getFileCount(target))
+        line_colors.append(white)
+        # text.append((git_info.getLineCount(target) + " lines").strip())
+        # line_colors.append(white)
+        for author in sorted( authors):
+            text.append(author + ' ' + str(author_lines[author]))
+            author_color = authors[author] % len(colors)
+            line_colors.append(colors[author_color])        
+        working_file_name = image_tools.overlayLines(working_file_name, text, line_colors, OVERRIDE_FONT, OVERRIDE_X, OVERRIDE_Y,2)        
+
+
+def main():      
     target = SOURCE_FOLDER
-    folders =  os.listdir(target)   
-    images = []
     base = git_info.getBaseRepoName(target)
     output_file_name = base + '.png'
 
-    wide_file_name = 'wide.png'
-    pieces = main([target], wide_file_name)
-    print authors
-    print author_lines
-        
-    stacked_file_name = image_tools.split_then_stack(wide_file_name,pieces)
-    image_tools.cleanUp(wide_file_name)
-
-    text = []
-    line_colors = []
-    line_colors.append(greenish)
-    text.append(git_info.getBaseRepoName(target))
-    for author in sorted( authors):
-        text.append(author + ' ' + str(author_lines[author]))
-        author_color = authors[author] % len(colors)
-        line_colors.append(colors[author_color])
+    allFiles = getAllFiles([target])
     
-    x = 100
-    y = ROW_OFFSET
-    overlay_file_name = image_tools.overlayLines(stacked_file_name, text, line_colors, 40, x, y)
-    image_tools.cleanUp(stacked_file_name)
+    metrics = extractFileMetrics(allFiles)
     
-    text = []
-    line_colors = []
-    text.append(git_info.getBaseRepoName(target))
-    line_colors.append(white)
-    text.append(git_info.getLastCommitDate(target))
-    line_colors.append(white)
-    text.append("File count: " + git_info.getFileCount(target))
-    line_colors.append(white)
-    text.append((git_info.getLineCount(target) + " lines").strip())
-    line_colors.append(white)
+    working_file_name = drawImage(output_file_name, allFiles, *metrics)
 
-    overlay_file_name = image_tools.overlayLines(overlay_file_name, text, line_colors)        
-    image_tools.rename(overlay_file_name,output_file_name)
-    image_tools.cleanUp(overlay_file_name)
+    cornerText(target, working_file_name)
+
+    centerText(target, working_file_name)
+  
+    image_tools.rename(working_file_name,output_file_name)
     image_tools.openImage(output_file_name)
 
     exit()
 
-    
+if __name__ == '__main__':
+    main()
+
+ 
     

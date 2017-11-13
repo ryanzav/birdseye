@@ -62,7 +62,7 @@ def getLineCount(folder):
     return response[-1]
 
 def getLastCommit(folder):
-    cmd = 'git log -1 --date=rfc'
+    cmd = 'git log -1 --date=local'
     cwd = os.getcwd()
     os.chdir(folder)    
     try:
@@ -76,7 +76,7 @@ def getLastCommit(folder):
 def getLastCommitDate(folder):
     msg = getLastCommit(folder)
     lines = msg.split('\n')
-    return lines[2]
+    return lines[2][5:].strip()
 
 
 

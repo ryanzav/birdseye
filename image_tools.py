@@ -8,6 +8,7 @@ from PIL import Image
 from PIL import ImageFont
 from PIL import ImageDraw 
 from PIL import ImageEnhance
+from PIL import ImageFilter
 
 import time
 import string
@@ -70,8 +71,6 @@ def split(target,pieces=0):
 
         upper_left_x += new_width
         lower_right_x += new_width
-
-    print '\nSplit into pieces.'
     return filenames
     
 def stack(targets):
@@ -87,8 +86,6 @@ def stack(targets):
         combined.paste(image, box)
     filename = targets[0][:-4]+ '_stacked.png'
     combined.save(filename, "PNG")
-
-    print '\nStack.'
     return filename
 
 def split_then_stack(target,pieces=0):
@@ -105,11 +102,9 @@ def overlay(target,text,color,x,y,font_height=40):
     bigFont = ImageFont.truetype("Courier Prime Code.ttf", bigHeight)
     drawFile = ImageDraw.Draw(img)
     drawFile.text((x, y),text,color,font=bigFont) # 1/10 from upper left corner
-    output_file_name = target[:-4] + '_overlay.png'
-    img.save(output_file_name, "PNG")
-
-    print '\nOverlaid.'
-    return output_file_name
+    #output_file_name = target[:-4] + '_overlay.png'
+    img.save(target, "PNG")
+    return target
 
 def getCentered(whole,insert_size):
     remainder = whole - insert_size
@@ -122,8 +117,8 @@ def getLongest(lines):
             longest = len(line)
     return longest
 
-def overlayLines(target,lines,line_colors,font_height=None,x=None,y=None):      
-    insert_fraction = 3
+def overlayLines(target,lines,line_colors,font_height=None,x=None,y=None, fraction=3):      
+    insert_fraction = fraction
     img = Image.open(target)
     width, height = img.size
 
@@ -141,15 +136,19 @@ def overlayLines(target,lines,line_colors,font_height=None,x=None,y=None):
         else:
             font_height = font_height_2         
     
+  
+    longest = getLongest(lines)
+    insert_width = longest * font_height*2/3
     if x == None:
-        longest = getLongest(lines)
-        insert_width = longest * font_height/2
         x = getCentered(width, insert_width)
 
-    if y == None:
-        line_count = len(lines)
-        insert_height = line_count * font_height
+    line_count = len(lines)
+    insert_height = line_count * font_height
+    if y == None: 
         y = getCentered(height, insert_height)
+
+    blur(img,x-10,y,x+insert_width,y+insert_height)
+    blur(img,x-10,y,x+insert_width,y+insert_height)
 
     bigHeight = font_height
     bigFont = ImageFont.truetype("Courier Prime Code.ttf", bigHeight)
@@ -159,11 +158,18 @@ def overlayLines(target,lines,line_colors,font_height=None,x=None,y=None):
     for i,line in enumerate(lines):
         drawFile.text((x, y + offset),line,line_colors[i],font=bigFont) # 1/10 from upper left corner
         offset += LINE_OFFSET
-    output_file_name = target[:-4] + '_overlay_lines.png'
-    img.save(output_file_name, "PNG")
+    #output_file_name = target[:-4] + '_overlay_lines.png'
+    img.save(target, "PNG")
+    return target    
 
-    print '\nOverlaid.'
-    return output_file_name    
+
+def copy(f,new): 
+    cmd = "cp " + f + " " + new
+    try:
+        response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
+    except subprocess.CalledProcessError as e:
+        print e.output
+    return new
 
 def rename(f,new): 
     cmd = "mv " + f + " " + new
@@ -171,6 +177,7 @@ def rename(f,new):
         response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
     except subprocess.CalledProcessError as e:
         print e.output
+    return new
 
 def openImage(f): 
     cmd = "open " + f
@@ -189,9 +196,17 @@ def cleanUp(files):
         except subprocess.CalledProcessError as e:
             print e.output
 
+def blur(image,x1,y1,x2,y2):
+    box = (x1, y1, x2, y2)
+    region = image.crop(box)
+    region = region.filter(ImageFilter.BLUR)
+    #region = region.filter(ImageFilter.MinFilter(5))
+    image.paste(region, box)
+    return image
+
 if __name__ == '__main__':
     target = "birdseye-example.png"
-
+    target = copy(target,"output.png")
     text = []
     line_colors = []
     text.append('Line 1')
@@ -210,6 +225,5 @@ if __name__ == '__main__':
     openImage(stacked)    
     time.sleep(3)
     cleanUp(output_file_name_1)
-    cleanUp(output_file_name_2)
     cleanUp(stacked)
     
