@@ -273,10 +273,11 @@ def drawImage(output_file_name, allFiles, filesCount, blanks, widest, tallest, i
     return stacked_file_name
 
 def processFile(filename):
+    filename = '"' + filename + '"'
     try:
         f = open(filename,'r')
     except IOError:
-        return
+        return 'Failed to open file.'
 
     data = f.read(8000)
     f.close()
