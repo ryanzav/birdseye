@@ -17,9 +17,10 @@ from __builtin__ import True
 import sys
 import git_info
 import image_tools
+import argparse
 
 SOURCE_FOLDER = "." 
-SOURCE_FOLDER = '/Users/ryanz/Desktop/lib-nilon'
+SOURCE_FOLDER = '/Users/raz01/Desktop/lib-nilon'
 #SOURCE_FOLDER = '/Users/ryanz/Desktop/devices-nlight-air-sub-ghz'
 
 CORNER_TEXT = False
@@ -315,9 +316,7 @@ def centerText(target, working_file_name):
             line_colors.append(colors[author_color])        
         working_file_name = image_tools.overlayLines(working_file_name, text, line_colors, OVERRIDE_FONT, OVERRIDE_X, OVERRIDE_Y,2)        
 
-
-def main():      
-    target = SOURCE_FOLDER
+def createImage(target):
     base = git_info.getBaseRepoName(target)
     output_file_name = base + '.png'
 
@@ -333,11 +332,20 @@ def main():
   
     image_tools.rename(working_file_name,output_file_name)
     image_tools.openImage(output_file_name)
-
+    
     exit()
+        
+if __name__ == '__main__':    
+    parser = argparse.ArgumentParser(add_help=True)
+    parser.add_argument("--target", help="Target folder location.")
+    args = parser.parse_args()
+    if args.target is None:
+        createImage(SOURCE_FOLDER)
+    else:
+        createImage(args.target)
 
-if __name__ == '__main__':
-    main()
+
+    
 
  
     
