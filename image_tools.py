@@ -19,7 +19,7 @@ import sys
 import git_info
 import subprocess
 
-colors = [(77,77,255,255), #bluish
+colors = [
         (230,25,75,255), # red
         (60,180,75,255), # green
         (255,225,25,255), # yellow
@@ -147,8 +147,7 @@ def overlayLines(target,lines,line_colors,font_height=None,x=None,y=None, fracti
     if y == None: 
         y = getCentered(height, insert_height)
 
-    blur(img,x-10,y,x+insert_width,y+insert_height)
-    blur(img,x-10,y,x+insert_width,y+insert_height)
+    blur(img,x-10,y-10,x+insert_width+10,y+insert_height+10 )
 
     bigHeight = font_height
     bigFont = ImageFont.truetype("Courier Prime Code.ttf", bigHeight)
@@ -200,7 +199,9 @@ def blur(image,x1,y1,x2,y2):
     box = (x1, y1, x2, y2)
     region = image.crop(box)
     region = region.filter(ImageFilter.BLUR)
-    #region = region.filter(ImageFilter.MinFilter(5))
+
+    enhancer = ImageEnhance.Brightness(region)
+    region = enhancer.enhance(.5)
     image.paste(region, box)
     return image
 
