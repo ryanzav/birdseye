@@ -20,8 +20,8 @@ import image_tools
 import argparse
 
 SOURCE_FOLDER = "." 
-SOURCE_FOLDER = '/Users/raz01/Desktop/lib-nilon'
-#SOURCE_FOLDER = '/Users/ryanz/Desktop/devices-nlight-air-sub-ghz'
+SOURCE_FOLDER = '../lib-nilon'
+#SOURCE_FOLDER = '../devices-nlight-air-sub-ghz'
 
 CORNER_TEXT = False
 CENTER_TEXT = True
@@ -121,6 +121,7 @@ def filterFiles(root, name):
 def getAllFiles(targets):
     allFiles = []
     for target in targets:
+        target = os.path.abspath(target)
         for root, dirs, files in os.walk(target, topdown=True):
             files.sort()
             for name in files[:MAX_FOLDER_FILES]: # or name[-2:] == '.h' 
@@ -198,7 +199,7 @@ def drawText(f,imgWidth, imgHeight, font, titleFont,titleHeight,charHeight,hOffs
     vOffset = titleHeight * 2
     
     x = 0
-    for y, line in enumerate(source[:MAX_LINES]):  
+    for y, line in enumerate(source[:MAX_LINES]):
         if len( line.strip() ) == 0:
             continue          
         if y + 1 < len(source):
@@ -273,13 +274,13 @@ def drawImage(output_file_name, allFiles, filesCount, blanks, widest, tallest, i
     return stacked_file_name
 
 def processFile(filename):
-    filename = '"' + filename + '"'
     try:
         f = open(filename,'r')
     except IOError:
-        return 'Failed to open file.'
+        print("Failed to open file!")
+        return ["Failed to open file!"]
 
-    data = f.read(8000)
+    data = f.read()
     f.close()
     databyline = string.split(data, '\n')
     return databyline
