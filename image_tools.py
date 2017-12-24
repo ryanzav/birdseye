@@ -41,8 +41,41 @@ colors = [
         (0,0,128,255) #navy
         ]
 
+darkblue = (0,0,40,255)
+transparent = (0,0,0,0)
+background = darkblue
+
 width_fraction = 16
 height_fraction = 9
+
+def separate(target,pieces=0):      
+    imgFile = Image.open(target)
+    width, height = imgFile.size
+
+    if pieces == 0:
+        for i in range(1,100):
+            if i*width*height_fraction/width_fraction > height/i:
+                break
+        pieces = i + i%2
+        
+    new_height = round(height/pieces)
+
+    upper_left_x = 0
+    upper_left_y = 0
+    lower_right_x = width
+    lower_right_y = new_height
+
+    filenames = []
+    for i in range(pieces):
+        sub_box = (upper_left_x,upper_left_y,lower_right_x,lower_right_y)
+        region = imgFile.crop(sub_box)
+        filename = target[:-4]+ '_' + str(i) + '.png'
+        region.save(filename, "PNG")
+        filenames.append(filename)
+
+        upper_left_y += new_height
+        lower_right_y += new_height
+    return filenames
 
 def split(target,pieces=0):      
     imgFile = Image.open(target)
@@ -87,6 +120,71 @@ def stack(targets):
     filename = targets[0][:-4]+ '_stacked.png'
     combined.save(filename, "PNG")
     return filename
+
+def pile(targets):
+    images = []
+    for target in targets:
+        if target != '':
+            images.append( Image.open(target) )
+    
+    max_width = 0
+    total_height = 0
+    for image in images:
+        width,height = image.size
+        if width > max_width:
+            max_width = width    
+        total_height += height
+            
+    total_width = max_width
+    piled = Image.new("RGBA", (total_width, total_height))
+    x_offset = 0
+    for i, image in enumerate(images):
+        width,height = image.size
+        box = (0,x_offset,width,x_offset + height)
+        piled.paste(image, box)
+        x_offset += height
+    filename = targets[0][:-4]+ '_piled.png'
+    piled.save(filename, "PNG")
+    return filename
+
+
+def connect(targets):
+    images = []
+    for target in targets:
+        images.append( Image.open(target) )
+    
+    max_width = 0
+    max_height = 0
+    for image in images:
+        width,height = image.size
+        if width > max_width:
+            max_width = width
+        if height > max_height:
+            max_height = height
+            
+    total_width = len(targets)*max_width
+    total_height = max_height
+    combined = Image.new("RGBA", (total_width, total_height),background)
+    for i, image in enumerate(images):
+        width,height = image.size
+        box = (i*width,0,(i+1)*width,height)
+        combined.paste(image, box)
+    filename = targets[0][:-4]+ '_connected.png'
+    combined.save(filename, "PNG")
+    return filename
+
+def enhance(targets):
+    images = []
+    for target in targets:
+        images.append( Image.open(target) )
+    
+    for i, image in enumerate(images):
+        enhancer = (ImageEnhance.Color(image))
+        image = enhancer.enhance(1.6)
+        enhancer = (ImageEnhance.Brightness(image))
+        image = enhancer.enhance(2)    
+        image.save(target, "PNG")
+    return targets
 
 def split_then_stack(target,pieces=0):
     files = split(target,pieces)
@@ -195,6 +293,20 @@ def cleanUp(files):
         except subprocess.CalledProcessError as e:
             print e.output
 
+def makeFolder(folder):
+    cmd = "mkdir " + folder
+    try:
+        response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
+    except subprocess.CalledProcessError as e:
+        print e.output
+
+def deleteFolder(folder):
+    cmd = "rm -r " + folder
+    try:
+        response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
+    except subprocess.CalledProcessError as e:
+        print e.output
+
 def blur(image,x1,y1,x2,y2):
     box = (x1, y1, x2, y2)
     region = image.crop(box)
@@ -206,6 +318,11 @@ def blur(image,x1,y1,x2,y2):
     return image
 
 if __name__ == '__main__':
+    target = '2.png'
+    results = separate(target)
+    for result in results:
+        openImage(result)
+    exit()
     target = "birdseye-example.png"
     target = copy(target,"output.png")
     text = []
