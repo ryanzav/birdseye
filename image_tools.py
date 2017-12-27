@@ -259,7 +259,6 @@ def overlayLines(target,lines,line_colors,font_height=None,x=None,y=None, fracti
     img.save(target, "PNG")
     return target    
 
-
 def copy(f,new): 
     cmd = "cp " + f + " " + new
     try:

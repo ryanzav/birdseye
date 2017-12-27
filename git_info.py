@@ -36,6 +36,44 @@ def getRepo(folder):
     os.chdir(cwd)    
     return response
 
+def getDiff(folder):
+    cmd = 'git diff --name-status HEAD@{1}'
+    cwd = os.getcwd()
+    os.chdir(folder)    
+    try:
+        response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
+    except subprocess.CalledProcessError as e:
+        print e.output
+        reponse = ''        
+    os.chdir(cwd)    
+    return response
+
+
+
+def checkoutRevision(folder, prev):
+    cmd = 'git checkout HEAD~' + str(int(prev)) 
+    cwd = os.getcwd()
+    os.chdir(folder)    
+    try:
+        response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
+    except subprocess.CalledProcessError as e:
+        print e.output
+        reponse = ''        
+    os.chdir(cwd)    
+    return response
+
+def resetHead(folder):
+    cmd = 'git checkout develop'
+    cwd = os.getcwd()
+    os.chdir(folder)    
+    try:
+        response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
+    except subprocess.CalledProcessError as e:
+        print e.output
+        reponse = ''        
+    os.chdir(cwd)    
+    return response
+
 def getFileCount(folder):
     cmd = 'git ls-files | wc -l'
     cwd = os.getcwd()
@@ -78,7 +116,10 @@ def getLastCommitDate(folder):
     lines = msg.split('\n')
     return lines[2][5:].strip()
 
-
+def getCommitNumber(folder):
+    msg = getLastCommit(folder)
+    lines = msg.split('\n')
+    return lines[0][7:14]
 
 def parseRepo(url):
     splat = string.split(url,'/')
@@ -98,6 +139,9 @@ if __name__ == '__main__':
     line = 20
     print getAuthor(f,line)
 
+    print resetHead(folder)
+    print checkoutRevision(folder,10)
+
     print 'lines: ' + getLineCount(folder)
 
     file_count = getFileCount(folder)
@@ -108,6 +152,9 @@ if __name__ == '__main__':
 
     last_commit_date = getLastCommitDate(folder)
     print last_commit_date
+
+    commit_number = getCommitNumber(folder)
+    print commit_number
 
     repo = getRepo(folder)
     print repo

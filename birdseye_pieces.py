@@ -25,10 +25,11 @@ SOURCE_FOLDER = '../lib-nilon'
 #SOURCE_FOLDER = '../devices-nlight-air-sub-ghz'
 TEMP_FOLDER = './temp/'
 
-MAX_FILES = 30
+MAX_FILES = 5#1000
 MAX_LINES = 100000
 HEIGHT_LIMIT = 4000 # Max file height before file is split.
 
+OPEN_IMAGE = False
 CORNER_TEXT = False
 CENTER_TEXT = True
 
@@ -50,7 +51,7 @@ MAX_WIDTH = MAX_CHARS * charWidth + HORIZONTAL_GAP
 MAX_HEIGHT = MAX_LINES * charHeight
 
 ROTATION = 0
-SCALE_DIV = 1
+SCALE_DIV = .4
 
 greenish = (32,200,170,255)
 bluish = (77,77,255,255)
@@ -86,6 +87,12 @@ colors = [
 authors = {}
 author_lines = {}
 
+def resetAuthors():
+    global authors
+    global author_lines
+    authors = {}
+    author_lines = {}        
+
 def getAuthorIndex(author):
     global authors
     global author_lines
@@ -117,17 +124,22 @@ def filterFiles(root, name):
 
 def getAllFiles(targets):
     allFiles = []
+    viewed = 0
     for target in targets:
         target = os.path.abspath(target)
+        diff = git_info.getDiff(target)
+        print "Diff:" + diff
         for root, dirs, files in os.walk(target, topdown=True):
+            dirs.sort()
             files.sort()
             for name in files: # or name[-2:] == '.h' 
-                if filterFiles(root, name):             
-                    allFiles.append((os.path.join(root, name)))
-                    if len(allFiles) >= MAX_FILES:
-                        break
-            if len(allFiles) >= MAX_FILES:
-                break
+                if filterFiles(root, name):                     
+                    if len(diff) == 0 or name in diff:            
+                        allFiles.append((os.path.join(root, name)))
+                    print name
+                    viewed += 1                            
+                    if viewed >= MAX_FILES:
+                        return allFiles
     return allFiles
     
 def drawText(f,font,titleFont,titleHeight,charHeight):
@@ -177,7 +189,12 @@ def drawImages(output_file_name, allFiles):
     fileImages = []
     for i,f in enumerate(sorted(allFiles)):        
         region = drawText(f,font,titleFont,titleHeight,charHeight)
-        fileImage = TEMP_FOLDER + str(i) + '.png'
+
+        new_w = int(region.size[0]/SCALE_DIV)
+        new_h = int(region.size[1]/SCALE_DIV)
+        region = region.resize((new_w,new_h), Image.ANTIALIAS)
+
+        fileImage = TEMP_FOLDER + os.path.split(f)[1] + '.png'
         region.save(fileImage, "PNG")
         del region
         fileImages.append(fileImage)
@@ -244,14 +261,15 @@ def limitHeight(fileImages):
 
 def createImage(target):
     base = git_info.getBaseRepoName(target)
-    output_file_name = base + '.png'
-
-    image_tools.makeFolder(TEMP_FOLDER)
+    commit = git_info.getCommitNumber(target)
+    output_file_name = base + '_' + commit + '.png'
 
     allFiles = getAllFiles([target])    
     if len(allFiles) == 0:
-        exit()
-    
+        return()
+
+    image_tools.makeFolder(TEMP_FOLDER)
+
     fileImages = drawImages(output_file_name, allFiles)
 
     fileImages = limitHeight(fileImages)
@@ -259,9 +277,11 @@ def createImage(target):
     pile_file = image_tools.pile(fileImages)
     
     separated_files = image_tools.separate(pile_file)
-    
+    image_tools.cleanUp(pile_file)
+
     connected = image_tools.connect(separated_files)
-    
+    image_tools.cleanUp(separated_files)
+
     image_tools.enhance([connected])
 
     working_file_name = connected
@@ -272,13 +292,30 @@ def createImage(target):
   
     image_tools.rename(working_file_name,output_file_name)
 
-    image_tools.deleteFolder(TEMP_FOLDER)
+    image_tools.cleanUp(working_file_name)
 
-    image_tools.openImage(output_file_name)
-    
-    exit()
+    #image_tools.deleteFolder(TEMP_FOLDER)
+
+    if OPEN_IMAGE:
+        image_tools.openImage(output_file_name)
         
-if __name__ == '__main__':    
+def gitHistory(target,revisions):
+    response = git_info.resetHead(target)
+    print(response)
+
+    for i in range(1,revisions):
+        createImage(SOURCE_FOLDER)
+        resetAuthors()
+        response = git_info.checkoutRevision(target, 1)
+        print(response)
+
+    response = git_info.resetHead(target)
+    print(response)
+
+if __name__ == '__main__':  
+    gitHistory(SOURCE_FOLDER,50)
+    exit()
+
     parser = argparse.ArgumentParser(add_help=True)
     parser.add_argument("--target", help="Target folder location.")
     args = parser.parse_args()
