@@ -25,7 +25,7 @@ SOURCE_FOLDER = '../lib-nilon'
 #SOURCE_FOLDER = '../devices-nlight-air-sub-ghz'
 TEMP_FOLDER = './temp/'
 
-MAX_FILES = 5#1000
+MAX_FILES = 50000
 MAX_LINES = 100000
 HEIGHT_LIMIT = 4000 # Max file height before file is split.
 
@@ -51,7 +51,7 @@ MAX_WIDTH = MAX_CHARS * charWidth + HORIZONTAL_GAP
 MAX_HEIGHT = MAX_LINES * charHeight
 
 ROTATION = 0
-SCALE_DIV = .4
+SCALE_DIV = .07
 
 greenish = (32,200,170,255)
 bluish = (77,77,255,255)
@@ -122,9 +122,9 @@ def filterFiles(root, name):
     else:
         return False
 
-def getAllFiles(targets):
+def getAllFiles(targets, first):
     allFiles = []
-    viewed = 0
+    neededFiles = []
     for target in targets:
         target = os.path.abspath(target)
         diff = git_info.getDiff(target)
@@ -134,13 +134,12 @@ def getAllFiles(targets):
             files.sort()
             for name in files: # or name[-2:] == '.h' 
                 if filterFiles(root, name):                     
-                    if len(diff) == 0 or name in diff:            
-                        allFiles.append((os.path.join(root, name)))
-                    print name
-                    viewed += 1                            
-                    if viewed >= MAX_FILES:
-                        return allFiles
-    return allFiles
+                    if first or name in diff:            
+                        neededFiles.append((os.path.join(root, name)))
+                    allFiles.append((os.path.join(root, name)))    
+                    if len(allFiles) >= MAX_FILES:
+                        return allFiles,neededFiles
+    return allFiles,neededFiles
     
 def drawText(f,font,titleFont,titleHeight,charHeight):
 
@@ -194,7 +193,7 @@ def drawImages(output_file_name, allFiles):
         new_h = int(region.size[1]/SCALE_DIV)
         region = region.resize((new_w,new_h), Image.ANTIALIAS)
 
-        fileImage = TEMP_FOLDER + os.path.split(f)[1] + '.png'
+        fileImage = TEMP_FOLDER + os.path.split(f)[0].split('/')[-1] + '_' +  os.path.split(f)[1] + '.png'
         region.save(fileImage, "PNG")
         del region
         fileImages.append(fileImage)
@@ -259,22 +258,32 @@ def limitHeight(fileImages):
         del whole    
     return fileImages
 
-def createImage(target):
+def createImage(target,first):
     base = git_info.getBaseRepoName(target)
     commit = git_info.getCommitNumber(target)
     output_file_name = base + '_' + commit + '.png'
 
-    allFiles = getAllFiles([target])    
-    if len(allFiles) == 0:
-        return()
+    allFiles, neededFiles = getAllFiles([target],first)    
+    # if len(allFiles) == 0:
+    #     return()
 
     image_tools.makeFolder(TEMP_FOLDER)
 
-    fileImages = drawImages(output_file_name, allFiles)
+    newFileImages = drawImages(output_file_name, neededFiles)
 
-    fileImages = limitHeight(fileImages)
+    newFileImages = limitHeight(newFileImages)
     
-    pile_file = image_tools.pile(fileImages)
+    # fileImages = []
+    # for root, dirs, files in os.walk(TEMP_FOLDER, topdown=True):
+    #     for f in files:
+    #         fileImages.append((os.path.join(root, f)))
+
+    allFileImages = []
+    for f in allFiles:
+        fileImage = TEMP_FOLDER + os.path.split(f)[0].split('/')[-1] + '_' +  os.path.split(f)[1] + '.png'
+        allFileImages.append(fileImage)
+
+    pile_file = image_tools.pile(allFileImages)
     
     separated_files = image_tools.separate(pile_file)
     image_tools.cleanUp(pile_file)
@@ -304,7 +313,11 @@ def gitHistory(target,revisions):
     print(response)
 
     for i in range(1,revisions):
-        createImage(SOURCE_FOLDER)
+        if i == 1:
+            first = True
+        else:
+            first = False
+        createImage(SOURCE_FOLDER,first)
         resetAuthors()
         response = git_info.checkoutRevision(target, 1)
         print(response)
