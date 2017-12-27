@@ -19,6 +19,15 @@ import sys
 import git_info
 import subprocess
 
+if sys.platform.startswith('darwin'):
+    delete_command = 'rm'
+    copy_command = 'cp'
+    move_command = 'mv'
+else:
+    delete_command = 'del'
+    copy_command = 'copy'
+    rename_command = 'ren'
+
 colors = [
         (230,25,75,255), # red
         (60,180,75,255), # green
@@ -260,36 +269,46 @@ def overlayLines(target,lines,line_colors,font_height=None,x=None,y=None, fracti
     return target    
 
 def copy(f,new): 
-    cmd = "cp " + f + " " + new
+    cmd = copy_command + " " + f + " " + new
     try:
         response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
     except subprocess.CalledProcessError as e:
+        print cmd
         print e.output
     return new
-
-def rename(f,new): 
-    cmd = "mv " + f + " " + new
-    try:
-        response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
-    except subprocess.CalledProcessError as e:
-        print e.output
-    return new
+    
+def move(f,new): 
+    if sys.platform.startswith('darwin'):
+        cmd = move_command + " " + f + " " + new
+        try:
+            print cmd
+            response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
+        except subprocess.CalledProcessError as e:
+            print cmd
+            print e.output
+        return new
+    else:
+        copy(f,new)
+        cleanUp(f)
+            
 
 def openImage(f): 
     cmd = "open " + f
     try:
         response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
     except subprocess.CalledProcessError as e:
+        print cmd
         print e.output
 
 def cleanUp(files):
     if type(files) != list:
         files = [files]
     for f in files:
-        cmd = "rm " + f
+        cmd = delete_command + "" + f
         try:
             response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
         except subprocess.CalledProcessError as e:
+            print cmd
             print e.output
 
 def makeFolder(folder):
@@ -297,13 +316,15 @@ def makeFolder(folder):
     try:
         response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
     except subprocess.CalledProcessError as e:
+        print cmd
         print e.output
 
 def deleteFolder(folder):
-    cmd = "rm -r " + folder
+    cmd = delete_command + " -r " + folder
     try:
         response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
     except subprocess.CalledProcessError as e:
+        print cmd
         print e.output
 
 def blur(image,x1,y1,x2,y2):

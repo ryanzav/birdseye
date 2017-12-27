@@ -20,10 +20,16 @@ import image_tools
 import argparse
 import math
 
+if sys.platform.startswith('darwin'):
+    slash = '/'
+else:
+    slash = '\\'    
+
+
 SOURCE_FOLDER = '.'
 SOURCE_FOLDER = '../lib-nilon'
 #SOURCE_FOLDER = '../devices-nlight-air-sub-ghz'
-TEMP_FOLDER = './temp/'
+TEMP_FOLDER = slash + 'temp' + slash
 
 MAX_FILES = 50000
 MAX_LINES = 100000
@@ -51,7 +57,7 @@ MAX_WIDTH = MAX_CHARS * charWidth + HORIZONTAL_GAP
 MAX_HEIGHT = MAX_LINES * charHeight
 
 ROTATION = 0
-SCALE_DIV = .07
+SCALE_DIV = 1
 
 greenish = (32,200,170,255)
 bluish = (77,77,255,255)
@@ -189,11 +195,11 @@ def drawImages(output_file_name, allFiles):
     for i,f in enumerate(sorted(allFiles)):        
         region = drawText(f,font,titleFont,titleHeight,charHeight)
 
-        new_w = int(region.size[0]/SCALE_DIV)
-        new_h = int(region.size[1]/SCALE_DIV)
+        new_w = int(region.size[0]*SCALE_DIV)
+        new_h = int(region.size[1]*SCALE_DIV)
         region = region.resize((new_w,new_h), Image.ANTIALIAS)
 
-        fileImage = TEMP_FOLDER + os.path.split(f)[0].split('/')[-1] + '_' +  os.path.split(f)[1] + '.png'
+        fileImage = TEMP_FOLDER + os.path.split(f)[0].split(slash)[-1] + '_' +  os.path.split(f)[1] + '.png'
         region.save(fileImage, "PNG")
         del region
         fileImages.append(fileImage)
@@ -236,8 +242,8 @@ def centerText(target, working_file_name):
         line_colors.append(white)
         text.append(git_info.getLastCommitDate(target))
         line_colors.append(white)
-        text.append("File count: " + git_info.getFileCount(target))
-        line_colors.append(white)
+        #text.append("File count: " + git_info.getFileCount(target))
+        #line_colors.append(white)
         # text.append((git_info.getLineCount(target) + " lines").strip())
         # line_colors.append(white)
         for author in sorted( authors):
@@ -262,7 +268,7 @@ def createImage(target,first):
     base = git_info.getBaseRepoName(target)
     commit = git_info.getCommitNumber(target)
     output_file_name = base + '_' + commit + '.png'
-
+    
     allFiles, neededFiles = getAllFiles([target],first)    
     # if len(allFiles) == 0:
     #     return()
@@ -280,7 +286,7 @@ def createImage(target,first):
 
     allFileImages = []
     for f in allFiles:
-        fileImage = TEMP_FOLDER + os.path.split(f)[0].split('/')[-1] + '_' +  os.path.split(f)[1] + '.png'
+        fileImage = TEMP_FOLDER + os.path.split(f)[0].split(slash)[-1] + '_' +  os.path.split(f)[1] + '.png'
         allFileImages.append(fileImage)
 
     pile_file = image_tools.pile(allFileImages)
@@ -299,7 +305,7 @@ def createImage(target,first):
 
     centerText(target, working_file_name)
   
-    image_tools.rename(working_file_name,output_file_name)
+    image_tools.move(working_file_name,output_file_name)
 
     image_tools.cleanUp(working_file_name)
 
