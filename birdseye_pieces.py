@@ -37,7 +37,7 @@ HEIGHT_LIMIT = 4000 # Max file height before file is split.
 
 OPEN_IMAGE = False
 CORNER_TEXT = False
-CENTER_TEXT = True
+CENTER_TEXT = False
 
 OVERRIDE_FONT = None
 OVERRIDE_X = None
