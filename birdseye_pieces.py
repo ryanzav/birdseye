@@ -17,8 +17,11 @@ from __builtin__ import True
 import sys
 import git_info
 import image_tools
+import disk_tools as disk
 import argparse
 import math
+
+import make_movie
 
 if sys.platform.startswith('darwin'):
     slash = '/'
@@ -29,7 +32,7 @@ else:
 SOURCE_FOLDER = '.'
 SOURCE_FOLDER = '../lib-nilon'
 #SOURCE_FOLDER = '../devices-nlight-air-sub-ghz'
-TEMP_FOLDER = slash + 'temp' + slash
+TEMP_FOLDER = '.' + slash + 'temp' + slash
 
 MAX_FILES = 50000
 MAX_LINES = 100000
@@ -37,7 +40,7 @@ HEIGHT_LIMIT = 4000 # Max file height before file is split.
 
 OPEN_IMAGE = False
 CORNER_TEXT = False
-CENTER_TEXT = False
+CENTER_TEXT = True
 
 OVERRIDE_FONT = None
 OVERRIDE_X = None
@@ -94,10 +97,9 @@ authors = {}
 author_lines = {}
 
 def resetAuthors():
-    global authors
     global author_lines
-    authors = {}
-    author_lines = {}        
+    for author in author_lines:
+        author_lines[author] = 0
 
 def getAuthorIndex(author):
     global authors
@@ -220,37 +222,36 @@ def processFile(filename):
     return databyline
 
 def cornerText(target, working_file_name):
-    if CORNER_TEXT:
-        text = []
-        line_colors = []
-        line_colors.append(greenish)
-        text.append(git_info.getBaseRepoName(target))
-        for author in sorted( authors):
-            text.append(author + ' ' + str(author_lines[author]))
-            author_color = authors[author] % len(colors)
-            line_colors.append(colors[author_color])
-        x = 100
-        y = ROW_OFFSET
-        working_file_name = image_tools.overlayLines(working_file_name, text, line_colors, 40, x, y)
-    return working_file_name
-
+    text = []
+    line_colors = []
+    line_colors.append(greenish)
+    text.append(git_info.getBaseRepoName(target))
+    for author in sorted( authors):
+        text.append(author + ' ' + str(author_lines[author]))
+        author_color = authors[author] % len(colors)
+        line_colors.append(colors[author_color])
+    x = 100
+    y = ROW_OFFSET
+    overlaid = image_tools.overlayLines(working_file_name, text, line_colors, 40, x, y)
+    return overlaid
+    
 def centerText(target, working_file_name):
-  if CENTER_TEXT: 
-        text = []
-        line_colors = []
-        text.append(git_info.getBaseRepoName(target))
-        line_colors.append(white)
-        text.append(git_info.getLastCommitDate(target))
-        line_colors.append(white)
-        #text.append("File count: " + git_info.getFileCount(target))
-        #line_colors.append(white)
-        # text.append((git_info.getLineCount(target) + " lines").strip())
-        # line_colors.append(white)
-        for author in sorted( authors):
-            text.append(author + ' ' + str(author_lines[author]))
-            author_color = authors[author] % len(colors)
-            line_colors.append(colors[author_color])        
-        working_file_name = image_tools.overlayLines(working_file_name, text, line_colors, OVERRIDE_FONT, OVERRIDE_X, OVERRIDE_Y,2)        
+    text = []
+    line_colors = []
+    text.append(git_info.getBaseRepoName(target))
+    line_colors.append(white)
+    text.append(git_info.getLastCommitDate(target))
+    line_colors.append(white)
+    #text.append("File count: " + git_info.getFileCount(target))
+    #line_colors.append(white)
+    # text.append((git_info.getLineCount(target) + " lines").strip())
+    # # line_colors.append(white)
+    # for author in sorted( authors):
+    #     text.append(author + ' ' + str(author_lines[author]))
+    #     author_color = authors[author] % len(colors)
+    #     line_colors.append(colors[author_color])        
+    overlaid = image_tools.overlayLines(working_file_name, text, line_colors, OVERRIDE_FONT, OVERRIDE_X, OVERRIDE_Y,2)        
+    return overlaid
 
 def limitHeight(fileImages):
     height_limit = HEIGHT_LIMIT
@@ -264,16 +265,16 @@ def limitHeight(fileImages):
         del whole    
     return fileImages
 
-def createImage(target,first):
+def createImage(target,first,index):
     base = git_info.getBaseRepoName(target)
     commit = git_info.getCommitNumber(target)
-    output_file_name = base + '_' + commit + '.png'
+    output_file_name = base + '_%04d' % index + '.png'
     
     allFiles, neededFiles = getAllFiles([target],first)    
     # if len(allFiles) == 0:
     #     return()
 
-    image_tools.makeFolder(TEMP_FOLDER)
+    disk.makeFolder(TEMP_FOLDER)
 
     newFileImages = drawImages(output_file_name, neededFiles)
 
@@ -285,34 +286,39 @@ def createImage(target,first):
     #         fileImages.append((os.path.join(root, f)))
 
     allFileImages = []
-    for f in allFiles:
-        fileImage = TEMP_FOLDER + os.path.split(f)[0].split(slash)[-1] + '_' +  os.path.split(f)[1] + '.png'
+    for i,f in enumerate(allFiles):
+        fileImage = TEMP_FOLDER + os.path.split(f)[0].split(slash)[-1] + '_' + os.path.split(f)[1] + '.png'
         allFileImages.append(fileImage)
 
     pile_file = image_tools.pile(allFileImages)
     
     separated_files = image_tools.separate(pile_file)
-    image_tools.cleanUp(pile_file)
+    disk.cleanUp(pile_file)
 
     connected = image_tools.connect(separated_files)
-    image_tools.cleanUp(separated_files)
+    disk.cleanUp(separated_files)   
 
-    image_tools.enhance([connected])
+    enhanced = image_tools.enhance([connected])
+    disk.cleanUp(connected)    
 
-    working_file_name = connected
+    if CORNER_TEXT:
+        overlaid = cornerText(target, enhanced[0])
+        disk.cleanUp(enhanced)        
+    else:
+        overlaid = enhanced[0]
 
-    cornerText(target, working_file_name)
+    if CENTER_TEXT: 
+        overlaid2 = centerText(target, overlaid)
+        disk.cleanUp(overlaid) 
+    else:
+        overlaid2 = overlaid
+    
+    disk.move(overlaid2, output_file_name)   
 
-    centerText(target, working_file_name)
-  
-    image_tools.move(working_file_name,output_file_name)
-
-    image_tools.cleanUp(working_file_name)
-
-    #image_tools.deleteFolder(TEMP_FOLDER)
+    #disk.deleteFolder(TEMP_FOLDER)
 
     if OPEN_IMAGE:
-        image_tools.openImage(output_file_name)
+        disk.open(output_file_name)
         
 def gitHistory(target,revisions):
     response = git_info.resetHead(target)
@@ -323,7 +329,7 @@ def gitHistory(target,revisions):
             first = True
         else:
             first = False
-        createImage(SOURCE_FOLDER,first)
+        createImage(SOURCE_FOLDER,first,i)
         resetAuthors()
         response = git_info.checkoutRevision(target, 1)
         print(response)
@@ -333,6 +339,7 @@ def gitHistory(target,revisions):
 
 if __name__ == '__main__':  
     gitHistory(SOURCE_FOLDER,50)
+    make_movie.combine()
     exit()
 
     parser = argparse.ArgumentParser(add_help=True)

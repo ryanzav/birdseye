@@ -114,7 +114,10 @@ def getLastCommit(folder):
 def getLastCommitDate(folder):
     msg = getLastCommit(folder)
     lines = msg.split('\n')
-    return lines[2][5:].strip()
+    for line in lines:
+        if 'Date:' in line:
+            return line[5:].strip()
+    return 'Date not found.'
 
 def getCommitNumber(folder):
     msg = getLastCommit(folder)

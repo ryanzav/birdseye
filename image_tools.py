@@ -18,15 +18,9 @@ from __builtin__ import True
 import sys
 import git_info
 import subprocess
+import disk_tools as disk
 
-if sys.platform.startswith('darwin'):
-    delete_command = 'rm'
-    copy_command = 'cp'
-    move_command = 'mv'
-else:
-    delete_command = 'del'
-    copy_command = 'copy'
-    rename_command = 'ren'
+WAIT_TIME = 1
 
 colors = [
         (230,25,75,255), # red
@@ -78,7 +72,7 @@ def separate(target,pieces=0):
     for i in range(pieces):
         sub_box = (upper_left_x,upper_left_y,lower_right_x,lower_right_y)
         region = imgFile.crop(sub_box)
-        filename = target[:-4]+ '_' + str(i) + '.png'
+        filename = target[:-4] + '_sep_%04d' % i + '.png'
         region.save(filename, "PNG")
         filenames.append(filename)
 
@@ -107,7 +101,7 @@ def split(target,pieces=0):
     for i in range(pieces):
         sub_box = (upper_left_x,upper_left_y,lower_right_x,lower_right_y)
         region = imgFile.crop(sub_box)
-        filename = target[:-4]+ '_' + str(i) + '.png'
+        filename = target[:-4]+ '_split_%04d' % i  + str(i) + '.png'
         region.save(filename, "PNG")
         filenames.append(filename)
 
@@ -187,31 +181,22 @@ def enhance(targets):
     for target in targets:
         images.append( Image.open(target) )
     
+    enhanced = []
     for i, image in enumerate(images):
         enhancer = (ImageEnhance.Color(image))
         image = enhancer.enhance(1.6)
         enhancer = (ImageEnhance.Brightness(image))
         image = enhancer.enhance(2)    
-        image.save(target, "PNG")
-    return targets
+        filename = target[:-4]+ '_enhance_%04d' % i  + str(i) + '.png'
+        image.save(filename, "PNG")
+        enhanced.append(filename)
+    return enhanced
 
 def split_then_stack(target,pieces=0):
     files = split(target,pieces)
     stacked = stack(files)
-    cleanUp(files)
+    disk.cleanUp(files)
     return stacked
-
-def overlay(target,text,color,x,y,font_height=40):      
-    img = Image.open(target)
-    width, height = img.size
-
-    bigHeight = font_height
-    bigFont = ImageFont.truetype("Courier Prime Code.ttf", bigHeight)
-    drawFile = ImageDraw.Draw(img)
-    drawFile.text((x, y),text,color,font=bigFont) # 1/10 from upper left corner
-    #output_file_name = target[:-4] + '_overlay.png'
-    img.save(target, "PNG")
-    return target
 
 def getCentered(whole,insert_size):
     remainder = whole - insert_size
@@ -223,6 +208,18 @@ def getLongest(lines):
         if longest < len(line):
             longest = len(line)
     return longest
+
+def overlay(target,text,color,x,y,font_height=40):      
+    img = Image.open(target)
+    width, height = img.size
+
+    bigHeight = font_height
+    bigFont = ImageFont.truetype("Courier Prime Code.ttf", bigHeight)
+    drawFile = ImageDraw.Draw(img)
+    drawFile.text((x, y),text,color,font=bigFont) # 1/10 from upper left corner
+    output_file_name = target[:-4] + '_overlay.png'
+    img.save(output_file_name, "PNG")
+    return output_file_name
 
 def overlayLines(target,lines,line_colors,font_height=None,x=None,y=None, fraction=3):      
     insert_fraction = fraction
@@ -264,68 +261,9 @@ def overlayLines(target,lines,line_colors,font_height=None,x=None,y=None, fracti
     for i,line in enumerate(lines):
         drawFile.text((x, y + offset),line,line_colors[i],font=bigFont) # 1/10 from upper left corner
         offset += LINE_OFFSET
-    #output_file_name = target[:-4] + '_overlay_lines.png'
-    img.save(target, "PNG")
-    return target    
-
-def copy(f,new): 
-    cmd = copy_command + " " + f + " " + new
-    try:
-        response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
-    except subprocess.CalledProcessError as e:
-        print cmd
-        print e.output
-    return new
-    
-def move(f,new): 
-    if sys.platform.startswith('darwin'):
-        cmd = move_command + " " + f + " " + new
-        try:
-            print cmd
-            response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
-        except subprocess.CalledProcessError as e:
-            print cmd
-            print e.output
-        return new
-    else:
-        copy(f,new)
-        cleanUp(f)
-            
-
-def openImage(f): 
-    cmd = "open " + f
-    try:
-        response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
-    except subprocess.CalledProcessError as e:
-        print cmd
-        print e.output
-
-def cleanUp(files):
-    if type(files) != list:
-        files = [files]
-    for f in files:
-        cmd = delete_command + "" + f
-        try:
-            response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
-        except subprocess.CalledProcessError as e:
-            print cmd
-            print e.output
-
-def makeFolder(folder):
-    cmd = "mkdir " + folder
-    try:
-        response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
-    except subprocess.CalledProcessError as e:
-        print cmd
-        print e.output
-
-def deleteFolder(folder):
-    cmd = delete_command + " -r " + folder
-    try:
-        response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
-    except subprocess.CalledProcessError as e:
-        print cmd
-        print e.output
+    output_file_name = target[:-4] + '_overlay_lines.png'
+    img.save(output_file_name, "PNG")
+    return output_file_name    
 
 def blur(image,x1,y1,x2,y2):
     box = (x1, y1, x2, y2)
@@ -338,13 +276,14 @@ def blur(image,x1,y1,x2,y2):
     return image
 
 if __name__ == '__main__':
-    target = '2.png'
+    target = "birdseye-example.png"
     results = separate(target)
     for result in results:
-        openImage(result)
-    exit()
-    target = "birdseye-example.png"
-    target = copy(target,"output.png")
+        disk.open(result)
+    time.sleep(WAIT_TIME)
+    disk.cleanUp(results)
+
+    #target = disk.copy(target,"output.png")
     text = []
     line_colors = []
     text.append('Line 1')
@@ -354,14 +293,24 @@ if __name__ == '__main__':
     text.append('Line 3')
     line_colors.append(colors[2])
     output_file_name_1 = overlayLines(target,text,line_colors)
-    openImage(output_file_name_1)    
+    disk.open(output_file_name_1)    
+    time.sleep(WAIT_TIME)
+    disk.cleanUp(output_file_name_1)
 
     output_file_name_2 = overlay(target,text[0],line_colors[0],100,10)
-    openImage(output_file_name_2)   
+    disk.open(output_file_name_2)   
+    time.sleep(WAIT_TIME)
+    disk.cleanUp(output_file_name_2)
 
     stacked = split_then_stack(target,3)
-    openImage(stacked)    
-    time.sleep(3)
-    cleanUp(output_file_name_1)
-    cleanUp(stacked)
+    disk.open(stacked)    
+    time.sleep(WAIT_TIME)
+    disk.cleanUp(stacked)
+
+    enhanced = enhance([target])
+    for image in enhanced:
+        disk.open(image)    
+    time.sleep(WAIT_TIME)
+    disk.cleanUp(enhanced)
+
     

@@ -7,7 +7,7 @@ def combine():
 	files = os.listdir(base)
 	files.sort()
 	
-	cmd = 'ffmpeg -framerate 1 -i lib-nilon_%02d.png -c:v libx264 -s 3840x2160 -r 60 -pix_fmt yuv420p10le out.mp4 -y'
+	cmd = 'ffmpeg -framerate 4 -i lib-nilon_%04d.png -c:v libx264 -s 3840x2160 -r 60 -pix_fmt yuv420p out.mp4 -y'
 	print cmd
 	os.system(cmd)
 	return(0)
