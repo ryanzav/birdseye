@@ -80,6 +80,23 @@ def separate(target,pieces=0):
         lower_right_y += new_height
     return filenames
 
+def make_even(target):      
+    imgFile = Image.open(target)
+    width, height = imgFile.size
+        
+    new_height = height - height % 2
+    new_width = width - width % 2
+
+    upper_left_x = 0
+    upper_left_y = 0
+    lower_right_x = new_width
+    lower_right_y = new_height
+
+    sub_box = (upper_left_x,upper_left_y,lower_right_x,lower_right_y)
+    region = imgFile.crop(sub_box)
+    region.save(target, "PNG")
+    return target
+
 def split(target,pieces=0):      
     imgFile = Image.open(target)
     width, height = imgFile.size

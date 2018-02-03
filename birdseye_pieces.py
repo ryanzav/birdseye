@@ -34,6 +34,8 @@ TOTAL_HEIGHT = 5000
 FORCE_WIDTH = False
 FORCED_WIDTH = 5000 #8885
 
+FORCE_EVEN = True
+
 SOURCE_FOLDER = '.'
 #SOURCE_FOLDER = '../lib-nilon'
 #SOURCE_FOLDER = '../devices-nlight-air-sub-ghz'
@@ -130,7 +132,7 @@ def filterFiles(root, name):
         return False 
     if 'mock' in root or 'mock' in name:
         return False                
-    if (name[-3:] == '.md' or name[-3:] == '.py'): #or name[-2:] == '.c' 
+    if (name[-3:] == '.md' or name[-3:] == '.py' or name[-2:] == '.c'):
         return True
     else:
         return False
@@ -279,7 +281,7 @@ def limitHeight(fileImages):
         del whole    
     return fileImages
 
-def createImage(target,first=True,index=0,movie=False, center_text = True):
+def createImage(target,first=True,index=0,movie=False, center_text = True, alphabetical_sort = False):
     base = git_info.getBaseRepoName(target)
     commit = git_info.getCommitNumber(target)
     output_file_name = base + '_%04d' % index + '.png'
@@ -307,7 +309,7 @@ def createImage(target,first=True,index=0,movie=False, center_text = True):
                 runImages.append(TEMP_FOLDER + slash + image)
     runImages.sort()
 
-    if movie:
+    if alphabetical_sort:
         total_height = 0
         batch = []
         separated_files = []
@@ -346,6 +348,9 @@ def createImage(target,first=True,index=0,movie=False, center_text = True):
 
     connected = image_tools.connect(separated_files)
     disk.cleanUp(separated_files)   
+
+    if FORCE_EVEN:
+        connected = image_tools.make_even(connected)        
 
     if FORCE_WIDTH:
         img = Image.open(connected)
@@ -386,7 +391,7 @@ def gitHistory(target,revisions):
             first = False
         movie = True
         center_text = False
-        createImage(SOURCE_FOLDER,first,i,movie)
+        createImage(SOURCE_FOLDER,first,i,movie,center_text)
         resetAuthors()
         response = git_info.checkoutRevision(target, 1)
         print(response)
@@ -415,7 +420,7 @@ if __name__ == '__main__':
     if args.movie:
         try:
             disk.deleteFolder(TEMP_FOLDER)
-            gitHistory(SOURCE_FOLDER,TOTAL_REVS)
+            gitHistory(SOURCE_FOLDER,revs)
             make_movie.combine()
         finally:
             response = git_info.resetHead(target)
