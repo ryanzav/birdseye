@@ -45,7 +45,7 @@ MAX_FILES = 100000
 MAX_LINES = 100000
 HEIGHT_LIMIT = 4000 # Max file height before file is split.
 
-OPEN_IMAGE = False
+OPEN_IMAGE = True
 CORNER_TEXT = False
 CENTER_TEXT = False
 
@@ -281,7 +281,7 @@ def limitHeight(fileImages):
         del whole    
     return fileImages
 
-def createImage(target,first=True,index=0,movie=False, center_text = True, alphabetical_sort = False):
+def createImage(target,first=True,index=0,movie=False, info = True, alphabetical_sort = False):
     base = git_info.getBaseRepoName(target)
     commit = git_info.getCommitNumber(target)
     output_file_name = base + '_%04d' % index + '.png'
@@ -367,7 +367,7 @@ def createImage(target,first=True,index=0,movie=False, center_text = True, alpha
     else:
         overlaid = enhanced[0]
 
-    if center_text: 
+    if info: 
         overlaid2 = centerText(target, overlaid)
         disk.cleanUp(overlaid) 
     else:
@@ -380,7 +380,7 @@ def createImage(target,first=True,index=0,movie=False, center_text = True, alpha
     if OPEN_IMAGE:
         disk.open(output_file_name)
         
-def gitHistory(target,revisions):
+def gitHistory(target,revisions,info):
     response = git_info.resetHead(target)
     print(response)
 
@@ -390,7 +390,7 @@ def gitHistory(target,revisions):
         else:
             first = False
         movie = True
-        center_text = False
+        center_text = info
         createImage(target,first,i,movie,center_text)
         resetAuthors()
         response = git_info.checkoutRevision(target, 1)
@@ -404,6 +404,7 @@ if __name__ == '__main__':
     parser.add_argument("--target", help="Target folder location.")
     parser.add_argument("--movie", help="Movie demo.", action="store_true")
     parser.add_argument("--revs", help="Number of revisions to use in movie.")    
+    parser.add_argument("--no_info", help="Exlude text overlay of git commit information.", action="store_true")
 
     args = parser.parse_args() 
 
@@ -411,6 +412,11 @@ if __name__ == '__main__':
         target = SOURCE_FOLDER
     else:
         target = args.target
+
+    if args.no_info:
+        info = False
+    else:
+        info = True
 
     if args.revs is None:
         revs = DEFAULT_REVS
@@ -420,14 +426,14 @@ if __name__ == '__main__':
     disk.deleteFolder(TEMP_FOLDER)
     if args.movie:
         try:
-            gitHistory(target,revs)
+            gitHistory(target,revs,info)
             base = git_info.getBaseRepoName(target)
             make_movie.combine(base)
         finally:
             response = git_info.resetHead(target)
             print(response)
     else:
-        createImage(target)    
+        createImage(target=target,info=info)    
     
     disk.deleteFolder(TEMP_FOLDER)
  
