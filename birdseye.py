@@ -44,7 +44,7 @@ SOURCE_FOLDER = '.'
 TEMP_FOLDER = '.' + slash + 'temp' + slash
 OUTPUT_FOLDER = '.' + slash + 'output' + slash
 
-MAX_FILES = 10#0000
+MAX_FILES = 100000
 MAX_LINES = 100000
 HEIGHT_LIMIT = 4000 # Max file height before file is split.
 
@@ -258,8 +258,6 @@ def centerText(target, working_file_name, extra = False):
     if extra:
         text.append("File count: " + git_info.getFileCount(target))
         line_colors.append(white)
-        text.append((git_info.getLineCount(target) + " lines").strip())
-        line_colors.append(white)
         for author in sorted( authors):
             text.append(author + ' ' + str(author_lines[author]))
             author_color = authors[author] % len(colors)
@@ -406,23 +404,32 @@ if __name__ == '__main__':
 
     args = parser.parse_args() 
 
-    if args.target is None:
-        target = SOURCE_FOLDER
+    if args.movie:
+        movie = True
     else:
-        target = args.target
+        movie = False
 
     if args.no_info:
         info = False
     else:
         info = True
 
+    if args.target is None:
+        target = SOURCE_FOLDER
+    else:
+        target = args.target
+
     if args.revs is None:
         revs = DEFAULT_REVS
     else:
         revs = int(args.revs)
     
+    msg = 'Generating a bird\'s eye view...\n'
+    msg += 'Folder = {target}\n'.format(target=target) 
+    print msg
+
     disk.deleteFolder(TEMP_FOLDER)
-    if args.movie:
+    if movie:
         try:
             gitHistory(target,revs,info)
             base = git_info.getBaseRepoName(target)
