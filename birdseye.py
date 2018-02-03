@@ -44,7 +44,7 @@ SOURCE_FOLDER = '.'
 TEMP_FOLDER = '.' + slash + 'temp' + slash
 OUTPUT_FOLDER = '.' + slash + 'output' + slash
 
-MAX_FILES = 100000
+MAX_FILES = 10#0000
 MAX_LINES = 100000
 HEIGHT_LIMIT = 4000 # Max file height before file is split.
 
@@ -248,21 +248,22 @@ def cornerText(target, working_file_name):
     overlaid = image_tools.overlayLines(working_file_name, text, line_colors, 40, x, y)
     return overlaid
     
-def centerText(target, working_file_name):
+def centerText(target, working_file_name, extra = False):
     text = []
     line_colors = []
     text.append(git_info.getBaseRepoName(target))
     line_colors.append(white)
     text.append(git_info.getLastCommitDate(target))
     line_colors.append(white)
-    #text.append("File count: " + git_info.getFileCount(target))
-    #line_colors.append(white)
-    # text.append((git_info.getLineCount(target) + " lines").strip())
-    # # line_colors.append(white)
-    # for author in sorted( authors):
-    #     text.append(author + ' ' + str(author_lines[author]))
-    #     author_color = authors[author] % len(colors)
-    #     line_colors.append(colors[author_color])        
+    if extra:
+        text.append("File count: " + git_info.getFileCount(target))
+        line_colors.append(white)
+        text.append((git_info.getLineCount(target) + " lines").strip())
+        line_colors.append(white)
+        for author in sorted( authors):
+            text.append(author + ' ' + str(author_lines[author]))
+            author_color = authors[author] % len(colors)
+            line_colors.append(colors[author_color])        
     overlaid = image_tools.overlayLines(working_file_name, text, line_colors, OVERRIDE_FONT, OVERRIDE_X, OVERRIDE_Y,2)        
     return overlaid
 
@@ -300,7 +301,7 @@ def createImage(target,first=True,index=0,movie=False, info = True, alphabetical
 
     newFileImages = drawImages(output_file_name, neededFiles)
 
-    newFileImages = limitHeight(newFileImages) # @TODO: Need modify allFiles to include filename changes from chopping files.
+    #newFileImages = limitHeight(newFileImages) # @TODO: Need modify allFiles to include filename changes from chopping files.
     
     folderImages = os.listdir(TEMP_FOLDER)
 
@@ -343,11 +344,9 @@ def createImage(target,first=True,index=0,movie=False, info = True, alphabetical
             batch = []
             separated_files.append(pile_file)               
     else:
-        pile_file = image_tools.pile(allFileImages)
-    
+        pile_file = image_tools.pile(allFileImages)    
         separated_files = image_tools.separate(pile_file)
         disk.cleanUp(pile_file)     
-
 
     connected = image_tools.connect(separated_files)
     disk.cleanUp(separated_files)   
@@ -371,7 +370,7 @@ def createImage(target,first=True,index=0,movie=False, info = True, alphabetical
         overlaid = enhanced[0]
 
     if info: 
-        overlaid2 = centerText(target, overlaid)
+        overlaid2 = centerText(target, overlaid, extra = True)
         disk.cleanUp(overlaid) 
     else:
         overlaid2 = overlaid
@@ -439,5 +438,3 @@ if __name__ == '__main__':
             disk.open(output_file_name)
     
     disk.deleteFolder(TEMP_FOLDER)
- 
-    
