@@ -391,7 +391,7 @@ def gitHistory(target,revisions):
             first = False
         movie = True
         center_text = False
-        createImage(SOURCE_FOLDER,first,i,movie,center_text)
+        createImage(target,first,i,movie,center_text)
         resetAuthors()
         response = git_info.checkoutRevision(target, 1)
         print(response)
@@ -427,10 +427,7 @@ if __name__ == '__main__':
             response = git_info.resetHead(target)
             print(response)
     else:
-        if args.target is None:
-            createImage(SOURCE_FOLDER)
-        else:
-            createImage(args.target)    
+        createImage(target)    
 
  
     
