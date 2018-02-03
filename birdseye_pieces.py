@@ -28,19 +28,24 @@ if sys.platform.startswith('darwin'):
 else:
     slash = '\\'    
 
+DEFAULT_REVS = 5
+TOTAL_HEIGHT = 5000
+
+FORCE_WIDTH = False
+FORCED_WIDTH = 5000 #8885
 
 SOURCE_FOLDER = '.'
-SOURCE_FOLDER = '../lib-nilon'
+#SOURCE_FOLDER = '../lib-nilon'
 #SOURCE_FOLDER = '../devices-nlight-air-sub-ghz'
 TEMP_FOLDER = '.' + slash + 'temp' + slash
 
-MAX_FILES = 50000
+MAX_FILES = 100000
 MAX_LINES = 100000
 HEIGHT_LIMIT = 4000 # Max file height before file is split.
 
 OPEN_IMAGE = False
 CORNER_TEXT = False
-CENTER_TEXT = True
+CENTER_TEXT = False
 
 OVERRIDE_FONT = None
 OVERRIDE_X = None
@@ -125,7 +130,7 @@ def filterFiles(root, name):
         return False 
     if 'mock' in root or 'mock' in name:
         return False                
-    if (name[-3:] == '.md' or name[-2:] == '.c' or name[-3:] == '.py'):
+    if (name[-3:] == '.md' or name[-3:] == '.py'): #or name[-2:] == '.c' 
         return True
     else:
         return False
@@ -208,6 +213,10 @@ def drawImages(output_file_name, allFiles):
     
     return fileImages
 
+def drawBlank(output_file_name, imgWidth, imgHeight):
+    imgFile = Image.new("RGBA", (imgWidth, imgHeight),background) 
+    imgFile.save(output_file_name,'PNG')   
+    return output_file_name
 
 def processFile(filename):
     try:
@@ -255,48 +264,94 @@ def centerText(target, working_file_name):
 
 def limitHeight(fileImages):
     height_limit = HEIGHT_LIMIT
+    added = []
+    deleted = []
     for image in fileImages:
         whole = Image.open(image)
         if whole.size[1] > height_limit:
             print(image)
             results = image_tools.separate(image,2)
-            fileImages.remove(image)    
+            fileImages.remove(image)  
+            deleted.append(image)  
             fileImages = results + fileImages
+            added += results
+            disk.cleanUp(image)
         del whole    
     return fileImages
 
-def createImage(target,first,index):
+def createImage(target,first=True,index=0,movie=False, center_text = True):
     base = git_info.getBaseRepoName(target)
     commit = git_info.getCommitNumber(target)
     output_file_name = base + '_%04d' % index + '.png'
     
     allFiles, neededFiles = getAllFiles([target],first)    
-    # if len(allFiles) == 0:
-    #     return()
-
-    disk.makeFolder(TEMP_FOLDER)
-
-    newFileImages = drawImages(output_file_name, neededFiles)
-
-    newFileImages = limitHeight(newFileImages)
-    
-    # fileImages = []
-    # for root, dirs, files in os.walk(TEMP_FOLDER, topdown=True):
-    #     for f in files:
-    #         fileImages.append((os.path.join(root, f)))
 
     allFileImages = []
     for i,f in enumerate(allFiles):
         fileImage = TEMP_FOLDER + os.path.split(f)[0].split(slash)[-1] + '_' + os.path.split(f)[1] + '.png'
         allFileImages.append(fileImage)
 
-    pile_file = image_tools.pile(allFileImages)
+    disk.makeFolder(TEMP_FOLDER)
+
+    newFileImages = drawImages(output_file_name, neededFiles)
+
+    newFileImages = limitHeight(newFileImages) # @TODO: Need modify allFiles to include filename changes from chopping files.
     
-    separated_files = image_tools.separate(pile_file)
-    disk.cleanUp(pile_file)
+    folderImages = os.listdir(TEMP_FOLDER)
+
+    runImages = []
+    for image in folderImages:
+        for match in allFileImages:
+            if os.path.split(match)[1] in image:
+                print image
+                runImages.append(TEMP_FOLDER + slash + image)
+    runImages.sort()
+
+    if movie:
+        total_height = 0
+        batch = []
+        separated_files = []
+        letters = 'abcdefghijklmnopqrstuvwxyz'
+        index = 0
+        for i,f in enumerate(runImages):
+            img = Image.open(f)      
+            name = os.path.split(f)[1]
+            letter = name[0].lower()
+            print letters[index]      
+            if letter not in letters or letter != letters[index]:
+                while letter != letters[index] and index < 25:
+                    index+=1
+                if TOTAL_HEIGHT - total_height > 0:
+                    batch.append(drawBlank('blank.png',MAX_WIDTH,TOTAL_HEIGHT-total_height))
+                pile_file = image_tools.pile(batch)
+                batch = []
+                batch.append(f)
+                separated_files.append(pile_file) 
+                total_height = img.size[1]
+            else:
+                batch.append(f)
+                total_height += img.size[1]
+        if len(batch) > 0:
+            if TOTAL_HEIGHT - total_height > 0:            
+                batch.append(drawBlank('blank.png',MAX_WIDTH,TOTAL_HEIGHT-total_height))
+            pile_file = image_tools.pile(batch)
+            batch = []
+            separated_files.append(pile_file)               
+    else:
+        pile_file = image_tools.pile(allFileImages)
+    
+        separated_files = image_tools.separate(pile_file)
+        disk.cleanUp(pile_file)     
+
 
     connected = image_tools.connect(separated_files)
     disk.cleanUp(separated_files)   
+
+    if FORCE_WIDTH:
+        img = Image.open(connected)
+        if img.size[0] < FORCED_WIDTH:
+            blank = drawBlank('blank.png',FORCED_WIDTH-img.size[0],img.size[1])
+            connected = image_tools.couple([connected,blank])
 
     enhanced = image_tools.enhance([connected])
     disk.cleanUp(connected)    
@@ -307,7 +362,7 @@ def createImage(target,first,index):
     else:
         overlaid = enhanced[0]
 
-    if CENTER_TEXT: 
+    if center_text: 
         overlaid2 = centerText(target, overlaid)
         disk.cleanUp(overlaid) 
     else:
@@ -329,7 +384,9 @@ def gitHistory(target,revisions):
             first = True
         else:
             first = False
-        createImage(SOURCE_FOLDER,first,i)
+        movie = True
+        center_text = False
+        createImage(SOURCE_FOLDER,first,i,movie)
         resetAuthors()
         response = git_info.checkoutRevision(target, 1)
         print(response)
@@ -338,20 +395,36 @@ def gitHistory(target,revisions):
     print(response)
 
 if __name__ == '__main__':  
-    gitHistory(SOURCE_FOLDER,50)
-    make_movie.combine()
-    exit()
-
     parser = argparse.ArgumentParser(add_help=True)
     parser.add_argument("--target", help="Target folder location.")
-    args = parser.parse_args()
+    parser.add_argument("--movie", help="Movie demo.", action="store_true")
+    parser.add_argument("--revs", help="Number of revisions to use in movie.")    
+
+    args = parser.parse_args() 
+
     if args.target is None:
-        createImage(SOURCE_FOLDER)
+        target = SOURCE_FOLDER
     else:
-        createImage(args.target)
+        target = args.target
 
+    if args.revs is None:
+        revs = DEFAULT_REVS
+    else:
+        arg.revs
 
-    
+    if args.movie:
+        try:
+            disk.deleteFolder(TEMP_FOLDER)
+            gitHistory(SOURCE_FOLDER,TOTAL_REVS)
+            make_movie.combine()
+        finally:
+            response = git_info.resetHead(target)
+            print(response)
+    else:
+        if args.target is None:
+            createImage(SOURCE_FOLDER)
+        else:
+            createImage(args.target)    
 
  
     

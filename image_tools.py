@@ -150,6 +150,24 @@ def pile(targets):
     piled.save(filename, "PNG")
     return filename
 
+def couple(targets):
+    images = []
+    for target in targets:
+        images.append( Image.open(target) )
+    
+    total_width = 0
+    for image in images:
+        width,height = image.size
+        total_width += width
+    total_height = height    
+    combined = Image.new("RGBA", (total_width, total_height),background)
+    for i, image in enumerate(images):
+        width,height = image.size
+        box = (i*width,0,(i+1)*width,height)
+        combined.paste(image, box)
+    filename = targets[0][:-4]+ '_coupled.png'
+    combined.save(filename, "PNG")
+    return filename
 
 def connect(targets):
     images = []

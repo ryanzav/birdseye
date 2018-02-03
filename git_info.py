@@ -62,8 +62,8 @@ def checkoutRevision(folder, prev):
     os.chdir(cwd)    
     return response
 
-def resetHead(folder):
-    cmd = 'git checkout develop'
+def resetHead(folder,branch='master'): #TODO better command to reset HEAD
+    cmd = 'git checkout ' + branch 
     cwd = os.getcwd()
     os.chdir(folder)    
     try:
