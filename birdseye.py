@@ -377,7 +377,8 @@ def createImage(target,first=True,index=0,movie=False, info = True, alphabetical
     return output_file_name
         
 def gitHistory(target,revisions,info):
-    response = git_info.resetHead(target)
+    branch = git_info.getBranch(target)
+    response = git_info.resetHead(target,branch)
     print(response)
 
     for i in range(1,revisions):
@@ -392,8 +393,8 @@ def gitHistory(target,revisions,info):
         response = git_info.checkoutRevision(target, 1)
         print(response)
 
-    response = git_info.resetHead(target)
-    print(response)
+    return branch
+
 
 if __name__ == '__main__':  
     parser = argparse.ArgumentParser(add_help=True)
@@ -424,20 +425,21 @@ if __name__ == '__main__':
     else:
         revs = int(args.revs)
     
-    msg = 'Generating a bird\'s eye view...\n'
+    msg = '\nCreating a bird\'s eye view...\n'
     msg += 'Folder = {target}\n'.format(target=target) 
     print msg
 
     disk.deleteFolder(TEMP_FOLDER)
     if movie:
+        branch = ''
         try:
-            gitHistory(target,revs,info)
+            branch = gitHistory(target,revs,info)
             base = git_info.getBaseRepoName(target)
             make_movie.combine(OUTPUT_FOLDER,base)
             if OPEN_AFTER:
                 disk.open(OUTPUT_FOLDER + 'out.mp4')
         finally:
-            response = git_info.resetHead(target)
+            response = git_info.resetHead(target,branch)
             print(response)
     else:
         output_file_name = createImage(target=target,info=info)    

@@ -36,6 +36,18 @@ def getRepo(folder):
     os.chdir(cwd)    
     return response
 
+def getBranch(folder):
+    cmd = 'git branch'
+    cwd = os.getcwd()
+    os.chdir(folder)    
+    try:
+        response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
+    except subprocess.CalledProcessError as e:
+        print e.output
+        reponse = ''        
+    os.chdir(cwd)    
+    return response[2:]
+
 def getDiff(folder):
     cmd = 'git diff --name-status HEAD@{1}'
     cwd = os.getcwd()
@@ -48,10 +60,8 @@ def getDiff(folder):
     os.chdir(cwd)    
     return response
 
-
-
 def checkoutRevision(folder, prev):
-    cmd = 'git reset --soft HEAD~' + str(int(prev)) 
+    cmd = 'git checkout HEAD~' + str(int(prev)) 
     cwd = os.getcwd()
     os.chdir(folder)    
     try:
@@ -62,8 +72,8 @@ def checkoutRevision(folder, prev):
     os.chdir(cwd)    
     return response
 
-def resetHead(folder): 
-    cmd = 'git pull'
+def resetHead(folder, branch): 
+    cmd = 'git checkout ' + branch
     cwd = os.getcwd()
     os.chdir(folder)    
     try:
