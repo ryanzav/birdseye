@@ -416,12 +416,12 @@ if __name__ == '__main__':
         revs = DEFAULT_REVS
     else:
         revs = int(args.revs)
-
+    
+    disk.deleteFolder(TEMP_FOLDER)
     if args.movie:
         try:
-            disk.deleteFolder(TEMP_FOLDER)
-            gitHistory(SOURCE_FOLDER,revs)
-            base = git_info.getBaseRepoName(SOURCE_FOLDER)
+            gitHistory(target,revs)
+            base = git_info.getBaseRepoName(target)
             make_movie.combine(base)
         finally:
             response = git_info.resetHead(target)
