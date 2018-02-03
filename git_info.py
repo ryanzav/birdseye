@@ -65,11 +65,13 @@ def checkoutRevision(folder, prev):
     cwd = os.getcwd()
     os.chdir(folder)    
     try:
-        response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
+        sub = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = sub.communicate()
     except subprocess.CalledProcessError as e:
+        print 'exception'
         print e.output      
     os.chdir(cwd)    
-    return response
+    return err
 
 def resetHead(folder, branch): 
     cmd = 'git checkout ' + branch
@@ -145,6 +147,10 @@ def getBaseRepoName(folder):
     return base
 
 if __name__ == '__main__':
+    result =  checkoutRevision('../b',1)
+    print 'result'
+    print result
+    exit()
    # f = "/Users/ryanz/Desktop/devices-nlight-air-sub-ghz/common/BLE-ctrl/BLE-task.c"
     f = "/Users/ryanz/Desktop/lib-nilon/nlight.py"
     folder = os.path.split(f)[0]
