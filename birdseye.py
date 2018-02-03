@@ -28,6 +28,8 @@ if sys.platform.startswith('darwin'):
 else:
     slash = '\\'    
 
+OPEN_AFTER = True
+
 DEFAULT_REVS = 5
 TOTAL_HEIGHT = 5000
 
@@ -46,7 +48,6 @@ MAX_FILES = 100000
 MAX_LINES = 100000
 HEIGHT_LIMIT = 4000 # Max file height before file is split.
 
-OPEN_IMAGE = True
 CORNER_TEXT = False
 CENTER_TEXT = False
 
@@ -376,11 +377,7 @@ def createImage(target,first=True,index=0,movie=False, info = True, alphabetical
         overlaid2 = overlaid
     
     disk.move(overlaid2, output_file_name)   
-
-    #disk.deleteFolder(TEMP_FOLDER)
-
-    if OPEN_IMAGE:
-        disk.open(output_file_name)
+    return output_file_name
         
 def gitHistory(target,revisions,info):
     response = git_info.resetHead(target)
@@ -430,12 +427,16 @@ if __name__ == '__main__':
         try:
             gitHistory(target,revs,info)
             base = git_info.getBaseRepoName(target)
-            make_movie.combine(base)
+            make_movie.combine(OUTPUT_FOLDER,base)
+            if OPEN_AFTER:
+                disk.open(OUTPUT_FOLDER + 'out.mp4')
         finally:
             response = git_info.resetHead(target)
             print(response)
     else:
-        createImage(target=target,info=info)    
+        output_file_name = createImage(target=target,info=info)    
+        if OPEN_AFTER:
+            disk.open(output_file_name)
     
     disk.deleteFolder(TEMP_FOLDER)
  
