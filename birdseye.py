@@ -40,6 +40,7 @@ SOURCE_FOLDER = '.'
 #SOURCE_FOLDER = '../lib-nilon'
 #SOURCE_FOLDER = '../devices-nlight-air-sub-ghz'
 TEMP_FOLDER = '.' + slash + 'temp' + slash
+OUTPUT_FOLDER = '.' + slash + 'output' + slash
 
 MAX_FILES = 100000
 MAX_LINES = 100000
@@ -284,7 +285,7 @@ def limitHeight(fileImages):
 def createImage(target,first=True,index=0,movie=False, info = True, alphabetical_sort = False):
     base = git_info.getBaseRepoName(target)
     commit = git_info.getCommitNumber(target)
-    output_file_name = base + '_%04d' % index + '.png'
+    output_file_name = OUTPUT_FOLDER + base + '_%04d' % index + '.png'
     
     allFiles, neededFiles = getAllFiles([target],first)    
 
@@ -294,6 +295,7 @@ def createImage(target,first=True,index=0,movie=False, info = True, alphabetical
         allFileImages.append(fileImage)
 
     disk.makeFolder(TEMP_FOLDER)
+    disk.makeFolder(OUTPUT_FOLDER)
 
     newFileImages = drawImages(output_file_name, neededFiles)
 
