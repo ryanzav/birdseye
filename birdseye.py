@@ -404,9 +404,6 @@ def gitHistory(target,revisions,info):
 
         resetAuthors()
         response = git_info.checkoutRevision(target, 1)
-        print(response)
-        if 'fatal' in response:
-            break
 
     return branch
 

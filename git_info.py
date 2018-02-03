@@ -67,8 +67,7 @@ def checkoutRevision(folder, prev):
     try:
         response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
     except subprocess.CalledProcessError as e:
-        print e.output
-        response = 'fatal'        
+        print e.output      
     os.chdir(cwd)    
     return response
 
@@ -92,7 +91,7 @@ def getFileCount(folder):
         response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
     except subprocess.CalledProcessError as e:
         print e.output
-        reponse = ''        
+        response = ''        
     os.chdir(cwd)    
     return string.strip(response)
 
@@ -104,7 +103,7 @@ def getLineCount(folder):
         response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
     except subprocess.CalledProcessError as e:
         print e.output
-        reponse = ''        
+        response = ''        
     os.chdir(cwd)    
     response = response[:-1].split('\n')
     return response[-1]
@@ -117,7 +116,7 @@ def getLastCommit(folder):
         response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
     except subprocess.CalledProcessError as e:
         print e.output
-        reponse = ''        
+        response = ''        
     os.chdir(cwd)    
     return response
 
