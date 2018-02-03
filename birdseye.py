@@ -415,7 +415,7 @@ if __name__ == '__main__':
     if args.revs is None:
         revs = DEFAULT_REVS
     else:
-        arg.revs
+        revs = int(args.revs)
 
     if args.movie:
         try:
