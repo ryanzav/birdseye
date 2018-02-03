@@ -68,7 +68,7 @@ def checkoutRevision(folder, prev):
         response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
     except subprocess.CalledProcessError as e:
         print e.output
-        reponse = ''        
+        response = 'fatal'        
     os.chdir(cwd)    
     return response
 
