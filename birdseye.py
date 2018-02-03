@@ -33,8 +33,7 @@ OPEN_AFTER = True
 DEFAULT_REVS = 5
 TOTAL_HEIGHT = 5000
 
-FORCE_WIDTH = False
-FORCED_WIDTH = 5000 #8885
+FORCE_WIDTH = True
 
 FORCE_EVEN = True
 
@@ -282,7 +281,7 @@ def limitHeight(fileImages):
         del whole    
     return fileImages
 
-def createImage(target,first=True,index=0,movie=False, info = True, alphabetical_sort = False):
+def createImage(target,first=True,index=0,movie=False, info = True, alphabetical_sort = False, forced_width = 0):
     base = git_info.getBaseRepoName(target)
     commit = git_info.getCommitNumber(target)
     output_file_name = OUTPUT_FOLDER + base + '_%04d' % index + '.png'
@@ -352,10 +351,10 @@ def createImage(target,first=True,index=0,movie=False, info = True, alphabetical
     if FORCE_EVEN:
         connected = image_tools.make_even(connected)        
 
-    if FORCE_WIDTH:
+    if movie and FORCE_WIDTH and not first:
         img = Image.open(connected)
-        if img.size[0] < FORCED_WIDTH:
-            blank = drawBlank('blank.png',FORCED_WIDTH-img.size[0],img.size[1])
+        if img.size[0] < forced_width:
+            blank = drawBlank('blank.png',forced_width-img.size[0],img.size[1])
             connected = image_tools.couple([connected,blank])
 
     enhanced = image_tools.enhance([connected])
@@ -381,6 +380,7 @@ def gitHistory(target,revisions,info):
     response = git_info.resetHead(target,branch)
     print(response)
 
+    forced_width = 0
     for i in range(1,revisions):
         print( '{i}/{revisions} {percent}%'.format( i=i,revisions=revisions,percent=int(100.0*i/revisions) ) )
         if i == 1:
@@ -389,10 +389,17 @@ def gitHistory(target,revisions,info):
             first = False
         movie = True
         center_text = info
-        createImage(target,first,i,movie,center_text)
+
+        file_name = createImage(target=target,first=first,index=i,movie=movie,info=center_text,forced_width=forced_width)
+        if first:
+            img = Image.open(file_name)
+            forced_width = img.size[0]            
+
         resetAuthors()
         response = git_info.checkoutRevision(target, 1)
         print(response)
+        if 'fatal' in response:
+            break
 
     return branch
 
