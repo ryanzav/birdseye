@@ -51,7 +51,7 @@ def getDiff(folder):
 
 
 def checkoutRevision(folder, prev):
-    cmd = 'git checkout HEAD~' + str(int(prev)) 
+    cmd = 'git reset --soft HEAD~' + str(int(prev)) 
     cwd = os.getcwd()
     os.chdir(folder)    
     try:
@@ -62,8 +62,8 @@ def checkoutRevision(folder, prev):
     os.chdir(cwd)    
     return response
 
-def resetHead(folder,branch='master'): #TODO better command to reset HEAD
-    cmd = 'git checkout ' + branch 
+def resetHead(folder): 
+    cmd = 'git pull'
     cwd = os.getcwd()
     os.chdir(folder)    
     try:
