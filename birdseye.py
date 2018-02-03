@@ -382,6 +382,7 @@ def gitHistory(target,revisions,info):
     print(response)
 
     for i in range(1,revisions):
+        print( '{i}/{revisions} {percent}%'.format( i=i,revisions=revisions,percent=int(100.0*i/revisions) ) )
         if i == 1:
             first = True
         else:
