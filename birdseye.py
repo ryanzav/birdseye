@@ -421,7 +421,8 @@ if __name__ == '__main__':
         try:
             disk.deleteFolder(TEMP_FOLDER)
             gitHistory(SOURCE_FOLDER,revs)
-            make_movie.combine()
+            base = git_info.getBaseRepoName(SOURCE_FOLDER)
+            make_movie.combine(base)
         finally:
             response = git_info.resetHead(target)
             print(response)
