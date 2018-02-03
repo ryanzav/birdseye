@@ -428,6 +428,7 @@ if __name__ == '__main__':
             print(response)
     else:
         createImage(target)    
-
+    
+    disk.deleteFolder(TEMP_FOLDER)
  
     
