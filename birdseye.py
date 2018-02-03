@@ -368,7 +368,7 @@ def createImage(target,first=True,index=0,movie=False, info = True, alphabetical
         overlaid = enhanced[0]
 
     if info: 
-        overlaid2 = centerText(target, overlaid, extra = True)
+        overlaid2 = centerText(target, overlaid, extra = False)
         disk.cleanUp(overlaid) 
     else:
         overlaid2 = overlaid
