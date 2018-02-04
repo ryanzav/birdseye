@@ -69,7 +69,7 @@ MAX_WIDTH = MAX_CHARS * charWidth + HORIZONTAL_GAP
 MAX_HEIGHT = MAX_LINES * charHeight
 
 ROTATION = 0
-SCALE_DIV = 1
+SCALE_DIV = .5
 
 greenish = (32,200,170,255)
 bluish = (77,77,255,255)
@@ -121,6 +121,7 @@ def getAuthorIndex(author):
         index = len(authors)
         authors[author] = index
         author_lines[author] = 1
+        print 'New author: ' + author
     else:
         author_lines[author] += 1
     return authors[author]
@@ -134,7 +135,7 @@ def filterFiles(root, name):
         return False 
     if 'mock' in root or 'mock' in name:
         return False                
-    if (name[-3:] == '.md' or name[-3:] == '.py' or name[-2:] == '.c'):
+    if (name[-3:] == '.md' or name[-3:] == '.py' or name[-2:] == '.c') and 'network.c' not in name:
         return True
     else:
         return False
@@ -163,6 +164,8 @@ def drawText(f,font,titleFont,titleHeight,charHeight):
     sys.stdout.write("\r{0}                         ".format(str(f)))
     sys.stdout.flush()
 
+    blames = git_info.getBlame(f)
+
     source = processFile(f)       
 
     imgHeight = titleHeight*3 + (5 +len(source))*charHeight #Override
@@ -176,11 +179,12 @@ def drawText(f,font,titleFont,titleHeight,charHeight):
     drawFile.text((hOffset, vOffset),name,greenish,font=titleFont)
     vOffset += titleHeight * 2
     
-    for y, line in enumerate(source[:MAX_LINES]):
+    for y, srcs in enumerate(zip(source[:MAX_LINES],blames)):
+        line, blame = srcs
         if len( line.strip() ) == 0:
             continue          
         if y + 1 < len(source):
-            author = git_info.getAuthor(f,y)
+            author = blame[blame.find('<')+1:blame.find('>')]
             author_index = getAuthorIndex(author)
             author_index = author_index % len(colors)
             author_color = colors[author_index]

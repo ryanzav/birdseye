@@ -2,6 +2,22 @@ import subprocess
 import os   
 import string
 
+def getBlame(f):
+    folder = os.path.split(f)[0]
+    cwd = os.getcwd()
+    os.chdir(folder)
+    cmd = "git blame --abbrev=0 -e " + f
+    try:        
+        sub = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        response, err = sub.communicate()        
+    except subprocess.CalledProcessError as e:
+        print e.output
+        response = ''        
+    os.chdir(cwd)
+        
+    data_by_line = string.split(response, '\n')
+    return data_by_line
+
 def getAuthor(f,line):
     author = 'Not found'
     line += 1 # no line zero.
