@@ -439,7 +439,7 @@ if __name__ == '__main__':
     else:
         revs = int(args.revs)
     
-    msg = '\n                                           ~(OvO)~      \n'    
+    msg = '\n                                           ~~(OvO)~~     \n'    
     msg += '\nCreating a bird\'s eye view...\n'
     msg += 'Folder = {target}\n'.format(target=target) 
     msg += 'Movie = {movie}\n'.format(movie=str(movie))
