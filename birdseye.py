@@ -29,6 +29,7 @@ else:
     slash = '\\'    
 
 OPEN_AFTER = True
+REALLY_BIG = 5000
 
 DEFAULT_REVS = 5
 TOTAL_HEIGHT = 5000
@@ -376,6 +377,10 @@ def createImage(target,first=True,index=0,movie=False, info = True, alphabetical
     else:
         overlaid2 = overlaid
     
+    img = Image.open(overlaid2)
+    if img.size[0] > REALLY_BIG:
+        image_tools.scale(overlaid2,.5)
+
     disk.move(overlaid2, output_file_name)   
     return output_file_name
         

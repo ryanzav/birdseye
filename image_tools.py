@@ -51,6 +51,16 @@ background = darkblue
 width_fraction = 16
 height_fraction = 9
 
+def scale(target,factor):
+    imgFile = Image.open(target)
+    width, height = imgFile.size
+    new_width = int(factor*width)
+    new_height = int(factor*height)
+    img = imgFile.resize((new_width,new_height), Image.ANTIALIAS)
+    img.save(target,"PNG")
+    return target
+
+
 def separate(target,pieces=0):      
     imgFile = Image.open(target)
     width, height = imgFile.size
@@ -311,7 +321,10 @@ def blur(image,x1,y1,x2,y2):
     return image
 
 if __name__ == '__main__':
-    target = "birdseye-example.png"
+    target = "example.png"
+
+    scale(target,.5)
+    exit()
     results = separate(target)
     for result in results:
         disk.open(result)
