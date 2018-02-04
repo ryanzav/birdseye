@@ -100,5 +100,6 @@ ENV/
 # mypy
 .mypy_cache/
 
-# Output folder
+# Output and temp folders
 /output
+/temp
