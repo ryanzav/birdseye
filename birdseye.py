@@ -213,7 +213,7 @@ def drawImages(output_file_name, allFiles):
         region.save(fileImage, "PNG")
         del region
         fileImages.append(fileImage)
-    
+    print('')
     return fileImages
 
 def drawBlank(output_file_name, imgWidth, imgHeight):
@@ -270,8 +270,7 @@ def limitHeight(fileImages):
     deleted = []
     for image in fileImages:
         whole = Image.open(image)
-        if whole.size[1] > height_limit:
-            print(image)
+        if whole.size[1] > height_limit:            
             results = image_tools.separate(image,2)
             fileImages.remove(image)  
             deleted.append(image)  
@@ -306,7 +305,6 @@ def createImage(target,first=True,index=0,movie=False, info = True, alphabetical
     for image in folderImages:
         for match in allFileImages:
             if os.path.split(match)[1] in image:
-                print image
                 runImages.append(TEMP_FOLDER + slash + image)
     runImages.sort()
 
@@ -441,8 +439,14 @@ if __name__ == '__main__':
     else:
         revs = int(args.revs)
     
-    msg = '\nCreating a bird\'s eye view...\n'
+    msg = '\n                                           ~(OvO)~      \n'    
+    msg += '\nCreating a bird\'s eye view...\n'
     msg += 'Folder = {target}\n'.format(target=target) 
+    msg += 'Movie = {movie}\n'.format(movie=str(movie))
+    msg += 'Info = {info}\n'.format(info=str(info))
+    msg += 'Revs = {revs}\n'.format(revs=str(revs)) 
+    msg += '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+    msg += '                                                      ><> \n'
     print msg
 
     disk.deleteFolder(TEMP_FOLDER)

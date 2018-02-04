@@ -17,7 +17,7 @@ def getAuthor(f,line):
         response = ''        
     os.chdir(cwd)
 
-    if fatal in err:
+    if 'fatal' in err:
         return author
         
     data_by_line = string.split(response, '\n')
