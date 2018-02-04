@@ -356,11 +356,12 @@ def createImage(target,first=True,index=0,movie=False, info = True, alphabetical
         if img.size[0] < forced_width:
             blank = drawBlank('blank.png',forced_width-img.size[0],img.size[1])
             connected = image_tools.couple([connected,blank])
-
+            disk.cleanUp('blank.png')
         img = Image.open(connected)
         if img.size[1] < forced_height:
             blank = drawBlank('blank.png',img.size[0],forced_height-img.size[1])
-            connected = image_tools.pile([connected,blank])            
+            connected = image_tools.pile([connected,blank])        
+            disk.cleanUp('blank.png')    
 
     enhanced = image_tools.enhance([connected])
     disk.cleanUp(connected)    
