@@ -41,7 +41,7 @@ def getRepo(folder):
     return response
 
 def getBranch(folder):
-    cmd = 'git branch'
+    cmd = 'git branch | grep \'*\''
     cwd = os.getcwd()
     os.chdir(folder)    
     try:
