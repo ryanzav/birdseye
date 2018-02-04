@@ -9,13 +9,17 @@ def getAuthor(f,line):
     cwd = os.getcwd()
     os.chdir(folder)
     cmd = "git blame -p -L " + str(line) + ',' + str(line) + ' ' + f
-    try:
-        response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
+    try:        
+        sub = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        response, err = sub.communicate()        
     except subprocess.CalledProcessError as e:
         print e.output
         response = ''        
     os.chdir(cwd)
 
+    if fatal in err:
+        return author
+        
     data_by_line = string.split(response, '\n')
 
     for row in data_by_line:

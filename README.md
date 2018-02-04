@@ -1,5 +1,5 @@
 # birdseye
-Generate a bird's eye view of a project's source code. 
+Create a bird's eye view of a project's source code. 
 
 
 [example]: birdseye-example.png "example"
