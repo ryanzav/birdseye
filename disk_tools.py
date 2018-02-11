@@ -11,10 +11,12 @@ import subprocess
 
 if sys.platform.startswith('darwin'):
     delete_command = 'rm'
+    delete_folder_command = 'rm -r'
     copy_command = 'cp'
     move_command = 'mv'
 else:
     delete_command = 'del'
+    delete_folder_command = 'rmdir /S /Q'
     copy_command = 'copy'
     rename_command = 'ren'
 
@@ -69,7 +71,7 @@ def makeFolder(folder):
         print e.output
 
 def deleteFolder(folder):
-    cmd = delete_command + " -r " + folder
+    cmd = delete_folder_command + ' ' + folder
     try:
         response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
     except subprocess.CalledProcessError as e:
