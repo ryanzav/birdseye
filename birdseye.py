@@ -28,6 +28,8 @@ if sys.platform.startswith('darwin'):
 else:
     slash = '\\'    
 
+scale_div = 1
+
 OPEN_AFTER = True
 REALLY_BIG = 5000
 
@@ -39,8 +41,6 @@ FORCE_WIDTH = True
 FORCE_EVEN = True
 
 SOURCE_FOLDER = '.'
-#SOURCE_FOLDER = '../lib-nilon'
-#SOURCE_FOLDER = '../devices-nlight-air-sub-ghz'
 TEMP_FOLDER = '.' + slash + 'temp' + slash
 OUTPUT_FOLDER = '.' + slash + 'output' + slash
 
@@ -69,7 +69,6 @@ MAX_WIDTH = MAX_CHARS * charWidth + HORIZONTAL_GAP
 MAX_HEIGHT = MAX_LINES * charHeight
 
 ROTATION = 0
-SCALE_DIV = .5
 
 greenish = (32,200,170,255)
 bluish = (77,77,255,255)
@@ -121,7 +120,7 @@ def getAuthorIndex(author):
         index = len(authors)
         authors[author] = index
         author_lines[author] = 1
-        print 'New author: ' + author
+        print '\nNew author: ' + author
     else:
         author_lines[author] += 1
     return authors[author]
@@ -199,7 +198,7 @@ def drawText(f,font,titleFont,titleHeight,charHeight):
     del drawFile
     return region
 
-def drawImages(output_file_name, allFiles):
+def drawImages(output_file_name, allFiles, scale_div=1):
 
     font = ImageFont.truetype("Courier Prime Code.ttf", charHeight)
     titleFont = ImageFont.truetype("Courier Prime Code.ttf", titleHeight)
@@ -210,8 +209,8 @@ def drawImages(output_file_name, allFiles):
     for i,f in enumerate(sorted(allFiles)):        
         region = drawText(f,font,titleFont,titleHeight,charHeight)
 
-        new_w = int(region.size[0]*SCALE_DIV)
-        new_h = int(region.size[1]*SCALE_DIV)
+        new_w = int(region.size[0]*scale_div)
+        new_h = int(region.size[1]*scale_div)
         region = region.resize((new_w,new_h), Image.ANTIALIAS)
 
         fileImage = TEMP_FOLDER + os.path.split(f)[0].split(slash)[-1] + '_' +  os.path.split(f)[1] + '.png'
@@ -286,11 +285,18 @@ def limitHeight(fileImages):
     return fileImages
 
 def createImage(target,first=True,index=0,movie=False, info = True, alphabetical_sort = False, forced_width = 0, forced_height = 0):
+    global scale_div
     base = git_info.getBaseRepoName(target)
     commit = git_info.getCommitNumber(target)
     output_file_name = OUTPUT_FOLDER + base + '_%04d' % index + '.png'
     
     allFiles, neededFiles = getAllFiles([target],first)    
+
+    if first:
+        scale_div = 1 - len(allFiles)/500.0
+        if scale_div < .1:
+            scale_div = .1
+        print 'Scale = ' + str(scale_div)
 
     allFileImages = []
     for i,f in enumerate(allFiles):
@@ -300,7 +306,7 @@ def createImage(target,first=True,index=0,movie=False, info = True, alphabetical
     disk.makeFolder(TEMP_FOLDER)
     disk.makeFolder(OUTPUT_FOLDER)
 
-    newFileImages = drawImages(output_file_name, neededFiles)
+    newFileImages = drawImages(output_file_name, neededFiles,scale_div)
 
     #newFileImages = limitHeight(newFileImages) # @TODO: Need modify allFiles to include filename changes from chopping files.
     
@@ -381,9 +387,9 @@ def createImage(target,first=True,index=0,movie=False, info = True, alphabetical
     else:
         overlaid2 = overlaid
     
-    img = Image.open(overlaid2)
-    if img.size[0] > REALLY_BIG:
-        image_tools.scale(overlaid2,.5)
+    # img = Image.open(overlaid2)
+    # if img.size[0] > REALLY_BIG:
+    #     image_tools.scale(overlaid2,.5)
 
     disk.move(overlaid2, output_file_name)   
     return output_file_name
