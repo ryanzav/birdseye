@@ -2,7 +2,7 @@
 Create a bird's eye view of a project's source code. 
 
 
-[example]: birdseye-example.png "example"
+[example]: example.png "example"
 
 ![alt text][example]
 
