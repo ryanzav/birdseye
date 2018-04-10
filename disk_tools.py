@@ -14,7 +14,11 @@ copy = shutil.copyfile
 move = shutil.move
 
 def open(f):
-    cmd = "xdg-open " + f
+    if sys.platform == "linux2":
+        cmd = "xdg-open " + f
+    else:
+        cmd = "open " + f
+
     try:
         response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
     except subprocess.CalledProcessError as e:
