@@ -20,13 +20,9 @@ import image_tools
 import disk_tools as disk
 import argparse
 import math
+import os.path
 
 import make_movie
-
-if sys.platform.startswith('darwin'):
-    slash = '/'
-else:
-    slash = '\\'    
 
 scale_div = 1
 
@@ -41,8 +37,8 @@ FORCE_WIDTH = True
 FORCE_EVEN = True
 
 SOURCE_FOLDER = '.'
-TEMP_FOLDER = '.' + slash + 'temp' + slash
-OUTPUT_FOLDER = '.' + slash + 'output' + slash
+TEMP_FOLDER = os.path.join('.', 'temp')
+OUTPUT_FOLDER = os.path.join('.', 'output')
 
 MAX_FILES = 100000
 MAX_LINES = 100000
@@ -213,7 +209,8 @@ def drawImages(output_file_name, allFiles, scale_div=1):
         new_h = int(region.size[1]*scale_div)
         region = region.resize((new_w,new_h), Image.ANTIALIAS)
 
-        fileImage = TEMP_FOLDER + os.path.split(f)[0].split(slash)[-1] + '_' +  os.path.split(f)[1] + '.png'
+        dirname, filename = os.path.split(f)
+        fileImage = os.path.join(TEMP_FOLDER, dirname.split(os.path.sep)[-1] + '_' + filename + '.png')
         region.save(fileImage, "PNG")
         del region
         fileImages.append(fileImage)
@@ -300,7 +297,8 @@ def createImage(target,first=True,index=0,movie=False, info = True, alphabetical
 
     allFileImages = []
     for i,f in enumerate(allFiles):
-        fileImage = TEMP_FOLDER + os.path.split(f)[0].split(slash)[-1] + '_' + os.path.split(f)[1] + '.png'
+        dirname, filename = os.path.split(f)
+        fileImage = os.path.join(TEMP_FOLDER, dirname.split(os.path.sep)[-1] + '_' + filename + '.png')
         allFileImages.append(fileImage)
 
     disk.makeFolder(TEMP_FOLDER)
@@ -316,7 +314,7 @@ def createImage(target,first=True,index=0,movie=False, info = True, alphabetical
     for image in folderImages:
         for match in allFileImages:
             if os.path.split(match)[1] in image:
-                runImages.append(TEMP_FOLDER + slash + image)
+                runImages.append(os.path.join(TEMP_FOLDER, image))
     runImages.sort()
 
     if alphabetical_sort:

@@ -8,43 +8,17 @@ import string
 import os
 import sys
 import subprocess
+import shutil
 
-if sys.platform.startswith('darwin'):
-    delete_command = 'rm'
-    delete_folder_command = 'rm -r'
-    copy_command = 'cp'
-    move_command = 'mv'
-else:
-    delete_command = 'del'
-    delete_folder_command = 'rmdir /S /Q'
-    copy_command = 'copy'
-    rename_command = 'ren'
+copy = shutil.copyfile
+move = shutil.move
 
-def copy(f,new): 
-    cmd = copy_command + " " + f + " " + new
-    try:
-        response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
-    except subprocess.CalledProcessError as e:
-        print cmd
-        print e.output
-    return new
-    
-def move(f,new): 
-    if sys.platform.startswith('darwin'):
-        cmd = move_command + " " + f + " " + new
-        try:
-            response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
-        except subprocess.CalledProcessError as e:
-            print cmd
-            print e.output
-        return new
+def open(f):
+    if sys.platform == "linux2":
+        cmd = "xdg-open " + f
     else:
-        copy(f,new)
-        cleanUp(f)
-            
+        cmd = "open " + f
 
-def open(f): 
-    cmd = "open " + f
     try:
         response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
     except subprocess.CalledProcessError as e:
@@ -55,28 +29,19 @@ def cleanUp(files):
     if type(files) != list:
         files = [files]
     for f in files:
-        cmd = delete_command + " " + f
-        try:
-            response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
-        except subprocess.CalledProcessError as e:
-            print cmd
-            print e.output
+        os.remove(f)
 
 def makeFolder(folder):
-    cmd = "mkdir " + folder
     try:
-        response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
-    except subprocess.CalledProcessError as e:
-        print cmd
-        print e.output
+        os.mkdir(folder)
+    except OSError as ex:
+        print ex
 
 def deleteFolder(folder):
-    cmd = delete_folder_command + ' ' + folder
     try:
-        response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
-    except subprocess.CalledProcessError as e:
-        print cmd
-        print e.output
+        shutil.rmtree(folder)
+    except OSError as ex:
+        print ex
 
 if __name__ == '__main__':
     pass
