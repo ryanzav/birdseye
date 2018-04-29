@@ -27,9 +27,11 @@ import os.path
 import make_movie
 
 show_age = False
+age_only = False
 DATE_FORMAT = "%Y-%m-%d"
-OLDEST_DEFAULT = "2018-01-01"
-NEWEST_DEFAULT = "2018-04-01"
+day = 24 * 60 * 60 # Seconds in a day 
+newest = 0 # Number of seconds old for a line to be colored fully bright.
+months = 6 # Default number of months to use to scale the coloring of lines.
 
 scale_div = 1
 
@@ -181,10 +183,6 @@ def drawText(f,font,titleFont,titleHeight,charHeight):
     drawFile.text((hOffset, vOffset),name,greenish,font=titleFont)
     vOffset += titleHeight * 2
     
-    oldest = time.time() - calendar.timegm(time.strptime(OLDEST_DEFAULT, DATE_FORMAT))
-    newest = time.time() - calendar.timegm(time.strptime(NEWEST_DEFAULT, DATE_FORMAT))
-    day = calendar.timegm(time.strptime("2018-11-02", DATE_FORMAT))-calendar.timegm(time.strptime("2018-11-01", DATE_FORMAT)) 
-
     for y, srcs in enumerate(zip(source[:MAX_LINES],blames)):
         line, blame = srcs
         if len( line.strip() ) == 0 or len(blame.strip()) == 0:
@@ -204,9 +202,15 @@ def drawText(f,font,titleFont,titleHeight,charHeight):
             author = blame[blame.find('<')+1:blame.find('>')]
             author_index = getAuthorIndex(author)
             author_index = author_index % len(colors)
-            author_color = colors[author_index]
+            temp_color = colors[author_index]
 
             if show_age:
+                age_scale = age/255. # Newest approach 1.
+                author_color = (int(temp_color[0]*age_scale), int(temp_color[1]*age_scale), int(temp_color[2]*age_scale), 255)
+            else:
+                author_color = temp_color
+
+            if age_only:
                 line_color = aged_color
             else:
                 line_color = author_color
@@ -457,9 +461,15 @@ if __name__ == '__main__':
     parser.add_argument("--movie", help="Movie demo.", action="store_true")
     parser.add_argument("--revs", help="Number of revisions to use in movie.")    
     parser.add_argument("--no_info", help="Exlude text overlay of git commit information.", action="store_true")
-    parser.add_argument("--show_age", help="Color code lines according to age of commit instead of author.", action="store_true")
+    parser.add_argument("--show_age", help="Color code lines according to age of commit AND by author.", action="store_true")
+    parser.add_argument("--months", help="The number of months to scale the color coding of the commits to.")
+    parser.add_argument("--age_only", help="Only color code the lines by age, not author.", action="store_true")
 
     args = parser.parse_args() 
+
+    if args.months:
+        months = int(args.months)
+    oldest = months * 30 * day # Number of seconds old for a line to be colored black.
 
     if args.movie:
         movie = True
@@ -473,6 +483,9 @@ if __name__ == '__main__':
 
     if args.show_age:
         show_age = True
+
+    if args.age_only:
+        age_only = True
 
     if args.target is None:
         target = SOURCE_FOLDER
