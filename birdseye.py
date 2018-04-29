@@ -11,6 +11,8 @@ from PIL import ImageEnhance
 
 import string
 import os
+import time
+import calendar
 from PIL.FontFile import WIDTH
 
 from __builtin__ import True
@@ -23,6 +25,11 @@ import math
 import os.path
 
 import make_movie
+
+SHOW_AGE = True
+DATE_FORMAT = "%Y-%m-%d"
+OLDEST_DEFAULT = "2018-01-01"
+NEWEST_DEFAULT = "2018-04-01"
 
 scale_div = 1
 
@@ -174,16 +181,36 @@ def drawText(f,font,titleFont,titleHeight,charHeight):
     drawFile.text((hOffset, vOffset),name,greenish,font=titleFont)
     vOffset += titleHeight * 2
     
+    oldest = time.time() - calendar.timegm(time.strptime(OLDEST_DEFAULT, DATE_FORMAT))
+    newest = time.time() - calendar.timegm(time.strptime(NEWEST_DEFAULT, DATE_FORMAT))
+    day = calendar.timegm(time.strptime("2018-11-02", DATE_FORMAT))-calendar.timegm(time.strptime("2018-11-01", DATE_FORMAT)) 
+
     for y, srcs in enumerate(zip(source[:MAX_LINES],blames)):
         line, blame = srcs
-        if len( line.strip() ) == 0:
+        if len( line.strip() ) == 0 or len(blame.strip()) == 0:
             continue          
         if y + 1 < len(source):
+            i1 = blame.find(' 201') + 1
+            date = blame[i1:i1 + 1 + blame[i1+1:].find(' ')]
+            diff = time.time() - calendar.timegm(time.strptime(date, DATE_FORMAT))
+            if diff < newest:
+                diff = newest
+            elif diff > oldest:
+                diff = oldest
+            age = 255 - int(255*(diff-newest)/(oldest-newest))   # newest commit is 255, oldest is 0                      
+            aged_color = (age,age,age,255) # Dark blue. Newer commits are brighter. Older commits approach dark blue.
+
             author = blame[blame.find('<')+1:blame.find('>')]
             author_index = getAuthorIndex(author)
             author_index = author_index % len(colors)
             author_color = colors[author_index]
-            drawFile.text((hOffset, vOffset + charHeight*y),line,author_color,font=font)
+
+            if SHOW_AGE:
+                line_color = aged_color
+            else:
+                line_color = author_color
+
+            drawFile.text((hOffset, vOffset + charHeight*y),line,line_color,font=font)
 
     # The box is a 4-tuple defining the left, upper, right, and lower pixel coordinate.
     # The Python Imaging Library uses a coordinate system with (0, 0) in the upper left corner.
@@ -290,7 +317,7 @@ def createImage(target,first=True,index=0,movie=False, info = True, alphabetical
     allFiles, neededFiles = getAllFiles([target],first)    
 
     if first:
-        scale_div = 1 - len(allFiles)/500.0
+        scale_div = 1 - len(allFiles)/1000.0
         if scale_div < .1:
             scale_div = .1
         print 'Scale = ' + str(scale_div)
@@ -380,7 +407,7 @@ def createImage(target,first=True,index=0,movie=False, info = True, alphabetical
         overlaid = enhanced[0]
 
     if info: 
-        overlaid2 = centerText(target, overlaid, extra = False)
+        overlaid2 = centerText(target, overlaid, extra = True)
         disk.cleanUp(overlaid) 
     else:
         overlaid2 = overlaid
