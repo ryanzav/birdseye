@@ -190,15 +190,16 @@ def drawText(f,font,titleFont,titleHeight,charHeight):
         if len( line.strip() ) == 0 or len(blame.strip()) == 0:
             continue          
         if y + 1 < len(source):
-            i1 = blame.find(' 201') + 1
-            date = blame[i1:i1 + 1 + blame[i1+1:].find(' ')]
-            diff = time.time() - calendar.timegm(time.strptime(date, DATE_FORMAT))
-            if diff < newest:
-                diff = newest
-            elif diff > oldest:
-                diff = oldest
-            age = 255 - int(255*(diff-newest)/(oldest-newest))   # newest commit is 255, oldest is 0                      
-            aged_color = (age,age,age,255) # Dark blue. Newer commits are brighter. Older commits approach dark blue.
+            if show_age:
+                i1 = blame.find(' 201') + 1
+                date = blame[i1:i1 + 1 + blame[i1+1:].find(' ')]
+                diff = time.time() - calendar.timegm(time.strptime(date, DATE_FORMAT))
+                if diff < newest:
+                    diff = newest
+                elif diff > oldest:
+                    diff = oldest
+                age = 255 - int(255*(diff-newest)/(oldest-newest))   # newest commit is 255, oldest is 0                      
+                aged_color = (age,age,age,255) # Dark blue. Newer commits are brighter. Older commits approach dark blue.
 
             author = blame[blame.find('<')+1:blame.find('>')]
             author_index = getAuthorIndex(author)
