@@ -26,7 +26,7 @@ import os.path
 
 import make_movie
 
-SHOW_AGE = True
+show_age = False
 DATE_FORMAT = "%Y-%m-%d"
 OLDEST_DEFAULT = "2018-01-01"
 NEWEST_DEFAULT = "2018-04-01"
@@ -205,7 +205,7 @@ def drawText(f,font,titleFont,titleHeight,charHeight):
             author_index = author_index % len(colors)
             author_color = colors[author_index]
 
-            if SHOW_AGE:
+            if show_age:
                 line_color = aged_color
             else:
                 line_color = author_color
@@ -456,6 +456,7 @@ if __name__ == '__main__':
     parser.add_argument("--movie", help="Movie demo.", action="store_true")
     parser.add_argument("--revs", help="Number of revisions to use in movie.")    
     parser.add_argument("--no_info", help="Exlude text overlay of git commit information.", action="store_true")
+    parser.add_argument("--show_age", help="Color code lines according to age of commit instead of author.", action="store_true")
 
     args = parser.parse_args() 
 
@@ -468,6 +469,9 @@ if __name__ == '__main__':
         info = False
     else:
         info = True
+
+    if args.show_age:
+        show_age = True
 
     if args.target is None:
         target = SOURCE_FOLDER
