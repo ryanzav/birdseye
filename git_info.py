@@ -91,6 +91,7 @@ def checkoutRevision(folder, prev):
     try:
         sub = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err = sub.communicate()
+        err  = err.decode()
     except subprocess.CalledProcessError as e:
         print('exception')
         print(e.output)      
