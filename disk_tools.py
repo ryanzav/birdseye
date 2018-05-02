@@ -16,8 +16,10 @@ move = shutil.move
 def open(f):
     if sys.platform == "linux2":
         cmd = "xdg-open " + f
-    else:
+    elif sys.platform == "darwin":
         cmd = "open " + f
+    else:
+        cmd = f
 
     try:
         response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
