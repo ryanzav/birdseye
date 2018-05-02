@@ -22,8 +22,8 @@ def open(f):
     try:
         response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
     except subprocess.CalledProcessError as e:
-        print cmd
-        print e.output
+        print(cmd)
+        print(e.output)
 
 def cleanUp(files):
     if type(files) != list:
@@ -35,13 +35,13 @@ def makeFolder(folder):
     try:
         os.mkdir(folder)
     except OSError as ex:
-        print ex
+        print(ex)
 
 def deleteFolder(folder):
     try:
         shutil.rmtree(folder)
     except OSError as ex:
-        print ex
+        print(ex)
 
 if __name__ == '__main__':
     pass

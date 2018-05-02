@@ -1,6 +1,5 @@
 import subprocess
 import os   
-import string
 
 def getBlame(f):
     folder = os.path.split(f)[0]
@@ -9,13 +8,14 @@ def getBlame(f):
     cmd = "git blame --abbrev=0 -e " + f
     try:        
         sub = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        response, err = sub.communicate()        
+        response, err = sub.communicate()      
+        response = response.decode()          
     except subprocess.CalledProcessError as e:
-        print e.output
+        print(e.output)
         response = ''        
     os.chdir(cwd)
         
-    data_by_line = string.split(response, '\n')
+    data_by_line = response.split('\n')
     return data_by_line
 
 def getAuthor(f,line):
@@ -27,16 +27,17 @@ def getAuthor(f,line):
     cmd = "git blame -p -L " + str(line) + ',' + str(line) + ' ' + f
     try:        
         sub = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        response, err = sub.communicate()        
+        response, err = sub.communicate()    
+        response = response.decode()    
     except subprocess.CalledProcessError as e:
-        print e.output
+        print(e.output)
         response = ''        
     os.chdir(cwd)
 
     if 'fatal' in err:
         return author
         
-    data_by_line = string.split(response, '\n')
+    data_by_line = response.split('\n')
 
     for row in data_by_line:
         if row[:7] == 'author ':
@@ -50,8 +51,9 @@ def getRepo(folder):
     os.chdir(folder)    
     try:
         response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
+        response = response.decode()        
     except subprocess.CalledProcessError as e:
-        print e.output
+        print(e.output)
         reponse = ''        
     os.chdir(cwd)    
     return response
@@ -62,8 +64,9 @@ def getBranch(folder):
     os.chdir(folder)    
     try:
         response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
+        response = response.decode()        
     except subprocess.CalledProcessError as e:
-        print e.output
+        print(e.output)
         reponse = ''        
     os.chdir(cwd)    
     return response[2:]
@@ -74,8 +77,9 @@ def getDiff(folder):
     os.chdir(folder)    
     try:
         response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
+        response = response.decode()
     except subprocess.CalledProcessError as e:
-        print e.output
+        print(e.output)
         reponse = ''        
     os.chdir(cwd)    
     return response
@@ -88,8 +92,8 @@ def checkoutRevision(folder, prev):
         sub = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err = sub.communicate()
     except subprocess.CalledProcessError as e:
-        print 'exception'
-        print e.output      
+        print('exception')
+        print(e.output)      
     os.chdir(cwd)    
     return err
 
@@ -99,8 +103,9 @@ def resetHead(folder, branch):
     os.chdir(folder)    
     try:
         response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
+        response = response.decode()        
     except subprocess.CalledProcessError as e:
-        print e.output
+        print(e.output)
         reponse = ''        
     os.chdir(cwd)    
     return response
@@ -111,11 +116,12 @@ def getFileCount(folder):
     os.chdir(folder)    
     try:
         response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
+        response = response.decode()
     except subprocess.CalledProcessError as e:
-        print e.output
+        print(e.output)
         response = ''        
     os.chdir(cwd)    
-    return string.strip(response)
+    return response.strip()
 
 def getLineCount(folder):
     cmd = 'git ls-files | xargs wc -l'
@@ -123,8 +129,9 @@ def getLineCount(folder):
     os.chdir(folder)    
     try:
         response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
+        response = response.decode()        
     except subprocess.CalledProcessError as e:
-        print e.output
+        print(e.output)
         response = ''        
     os.chdir(cwd)    
     response = response[:-1].split('\n')
@@ -136,8 +143,9 @@ def getLastCommit(folder):
     os.chdir(folder)    
     try:
         response = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
+        response = response.decode()        
     except subprocess.CalledProcessError as e:
-        print e.output
+        print(e.output)
         response = ''        
     os.chdir(cwd)    
     return response
@@ -156,9 +164,10 @@ def getCommitNumber(folder):
     return lines[0][7:14]
 
 def parseRepo(url):
-    splat = string.split(url,'/')
-    splat = string.split(splat[-1],'.')
-    splat = string.split(splat[0],'\n')
+    #url = url.decode()
+    splat = url.split('/')
+    splat = splat[-1].split('.')
+    splat = splat[0].split('\n')
     return splat[0]
 
 def getBaseRepoName(folder):
@@ -168,36 +177,36 @@ def getBaseRepoName(folder):
 
 if __name__ == '__main__':
     result =  checkoutRevision('../b',1)
-    print 'result'
-    print result
+    print('result')
+    print(result)
     exit()
    # f = "/Users/ryanz/Desktop/devices-nlight-air-sub-ghz/common/BLE-ctrl/BLE-task.c"
     f = "/Users/ryanz/Desktop/lib-nilon/nlight.py"
     folder = os.path.split(f)[0]
     line = 20
-    print getAuthor(f,line)
+    print(getAuthor(f,line))
 
-    print resetHead(folder)
-    print checkoutRevision(folder,10)
+    print(resetHead(folder))
+    print(checkoutRevision(folder,10))
 
-    print 'lines: ' + getLineCount(folder)
+    print('lines: ' + getLineCount(folder))
 
     file_count = getFileCount(folder)
-    print file_count
+    print(file_count)
 
     last_commit = getLastCommit(folder)
-    print last_commit
+    print(last_commit)
 
     last_commit_date = getLastCommitDate(folder)
-    print last_commit_date
+    print(last_commit_date)
 
     commit_number = getCommitNumber(folder)
-    print commit_number
+    print(commit_number)
 
     repo = getRepo(folder)
-    print repo
+    print(repo)
     
 
     base = parseRepo(repo)
-    print base
-    print getBaseRepoName(folder)
+    print(base)
+    print(getBaseRepoName(folder))

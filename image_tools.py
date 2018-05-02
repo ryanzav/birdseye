@@ -14,7 +14,6 @@ import time
 import string
 import os
 from PIL.FontFile import WIDTH
-from __builtin__ import True
 import sys
 import git_info
 import subprocess
@@ -259,7 +258,7 @@ def overlay(target,text,color,x,y,font_height=40):
     width, height = img.size
 
     bigHeight = font_height
-    bigFont = ImageFont.truetype("Courier Prime Code.ttf", bigHeight)
+    bigFont = ImageFont.truetype("Courier Prime Code.ttf", int(bigHeight))
     drawFile = ImageDraw.Draw(img)
     drawFile.text((x, y),text,color,font=bigFont) # 1/10 from upper left corner
     output_file_name = target[:-4] + '_overlay.png'
@@ -299,7 +298,7 @@ def overlayLines(target,lines,line_colors,font_height=None,x=None,y=None, fracti
     blur(img,x-10,y-10,x+insert_width+10,y+insert_height+10 )
 
     bigHeight = font_height
-    bigFont = ImageFont.truetype("Courier Prime Code.ttf", bigHeight)
+    bigFont = ImageFont.truetype("Courier Prime Code.ttf", int(bigHeight))
     drawFile = ImageDraw.Draw(img)
     LINE_OFFSET = bigHeight
     offset = 0
@@ -311,7 +310,7 @@ def overlayLines(target,lines,line_colors,font_height=None,x=None,y=None, fracti
     return output_file_name    
 
 def blur(image,x1,y1,x2,y2):
-    box = (x1, y1, x2, y2)
+    box = (int(x1), int(y1), int(x2), int(y2))
     region = image.crop(box)
     region = region.filter(ImageFilter.BLUR)
 

@@ -1,6 +1,6 @@
 from PIL import Image, ImageFont, ImageDraw
 from subprocess import Popen, PIPE, STDOUT
-import StringIO
+import io
 import time
 import random
 import os
@@ -18,7 +18,7 @@ def make(dst, fps):
     p = Popen(cmd, stdout=PIPE, stdin=PIPE, stderr=STDOUT)
     
     bg_image = Image.new('RGB', (width, height))        
-    output = StringIO.StringIO()     
+    output = io.StringIO()     
     for file in files:
         if '.png' not in file:
             continue

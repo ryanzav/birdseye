@@ -9,13 +9,11 @@ from PIL import ImageFont
 from PIL import ImageDraw 
 from PIL import ImageEnhance
 
-import string
 import os
 import time
 import calendar
 from PIL.FontFile import WIDTH
 
-from __builtin__ import True
 import sys
 import git_info
 import image_tools
@@ -125,7 +123,7 @@ def getAuthorIndex(author):
         index = len(authors)
         authors[author] = index
         author_lines[author] = 1
-        print '\nNew author: ' + author
+        print(('\nNew author: ' + author))
     else:
         author_lines[author] += 1
     return authors[author]
@@ -150,7 +148,7 @@ def getAllFiles(targets, first):
     for target in targets:
         target = os.path.abspath(target)
         diff = git_info.getDiff(target)
-        print "Diff:" + diff
+        print(("Diff:" + diff))
         for root, dirs, files in os.walk(target, topdown=True):
             dirs.sort()
             files.sort()
@@ -232,7 +230,7 @@ def drawImages(output_file_name, allFiles, scale_div=1):
     titleFont = ImageFont.truetype("Courier Prime Code.ttf", titleHeight)
     bigFont = ImageFont.truetype("Courier Prime Code.ttf", bigHeight)
 
-    print 'Processing ' + str(len(allFiles)) + ' files...'
+    print(('Processing ' + str(len(allFiles)) + ' files...'))
     fileImages = []
     for i,f in enumerate(sorted(allFiles)):        
         region = drawText(f,font,titleFont,titleHeight,charHeight)
@@ -263,7 +261,7 @@ def processFile(filename):
 
     data = f.read()
     f.close()
-    databyline = string.split(data, '\n')
+    databyline = data.split('\n')
     return databyline
 
 def cornerText(target, working_file_name):
@@ -325,7 +323,7 @@ def createImage(target,first=True,index=0,movie=False, info = True, alphabetical
         scale_div = 1 - len(allFiles)/1000.0
         if scale_div < .1:
             scale_div = .1
-        print 'Scale = ' + str(scale_div)
+        print(('Scale = ' + str(scale_div)))
 
     allFileImages = []
     for i,f in enumerate(allFiles):
@@ -359,7 +357,7 @@ def createImage(target,first=True,index=0,movie=False, info = True, alphabetical
             img = Image.open(f)      
             name = os.path.split(f)[1]
             letter = name[0].lower()
-            print letters[index]      
+            print((letters[index]))      
             if letter not in letters or letter != letters[index]:
                 while letter != letters[index] and index < 25:
                     index+=1
@@ -432,7 +430,7 @@ def gitHistory(target,revisions,info):
     forced_width = 0
     forced_height = 0
     for i in range(1,revisions):
-        print( '{i}/{revisions} {percent}%'.format( i=i,revisions=revisions,percent=int(100.0*i/revisions) ) )
+        print(( '{i}/{revisions} {percent}%'.format( i=i,revisions=revisions,percent=int(100.0*i/revisions) ) ))
         if i == 1:
             first = True
         else:
@@ -505,7 +503,7 @@ if __name__ == '__main__':
     msg += 'Revs = {revs}\n'.format(revs=str(revs)) 
     msg += '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
     msg += '                                                      ><> \n'
-    print msg
+    print(msg)
 
     disk.deleteFolder(TEMP_FOLDER)
     if movie:
