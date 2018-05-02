@@ -8,11 +8,14 @@ def getBlame(f):
     cmd = "git blame --abbrev=0 -e " + f
     try:        
         sub = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        response, err = sub.communicate()      
+        response, err = sub.communicate()     
         response = response.decode()          
     except subprocess.CalledProcessError as e:
         print(e.output)
         response = ''        
+    except UnicodeDecodeError as e:
+        print(e)
+        response = ''                
     os.chdir(cwd)
         
     data_by_line = response.split('\n')

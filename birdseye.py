@@ -255,12 +255,15 @@ def drawBlank(output_file_name, imgWidth, imgHeight):
 def processFile(filename):
     try:
         f = open(filename,'r')
+        data = f.read()
+        f.close()
     except IOError:
         print("Failed to open file!")
         return ["Failed to open file!"]
+    except UnicodeDecodeError:
+        print("Failed to decode file!")
+        return ["Failed to decode file!"]
 
-    data = f.read()
-    f.close()
     databyline = data.split('\n')
     return databyline
 
