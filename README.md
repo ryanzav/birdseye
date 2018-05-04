@@ -29,26 +29,26 @@ optional arguments:
 
 Display the module argument options:
 
-    `$ python birdseye.py --help`
+    $ python birdseye.py --help
 
 Generate an image of the latest birsdeye git repo itself:
 
-    `$ python birdseye.py`
+    $ python birdseye.py
 
 Generate an image of another git repo:
 
-    `$ python birdseye.py --target ../other_repo`
+    $ python birdseye.py --target ../other_repo
 
 Generate an image with the colors coded darker depending on the age of the commit, and scaled to the number of months argument.
 
-    `$ python birdseye.py --show_age --months 12 --no_info `
+    $ python birdseye.py --show_age --months 12 --no_info
 
 Generate the same image but with the age color coded instead of the author and suppress the author info.
 
-    `$ python birdseye.py --show_age --age_only --no_info`
+    $ python birdseye.py --show_age --age_only --no_info
 
 Generate a movie of the last 20 git commits to the birdseye repo:
 
-    `$ python birdseye.py --movie --revs 20`
+    $ python birdseye.py --movie --revs 20
 
 
