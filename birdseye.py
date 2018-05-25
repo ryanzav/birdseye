@@ -6,7 +6,7 @@ Created on Feb 21, 2016
 
 from PIL import Image
 from PIL import ImageFont
-from PIL import ImageDraw 
+from PIL import ImageDraw
 from PIL import ImageEnhance
 
 import os
@@ -27,7 +27,7 @@ import make_movie
 show_age = False
 age_only = False
 DATE_FORMAT = "%Y-%m-%d"
-day = 24 * 60 * 60 # Seconds in a day 
+day = 24 * 60 * 60 # Seconds in a day
 newest = 0 # Number of seconds old for a line to be colored fully bright.
 months = 6 # Default number of months to use to scale the coloring of lines.
 
@@ -132,11 +132,11 @@ def filterFiles(root, name):
     if 'mirror' in root:
         return False
     if 'TraceRecorder' in root:
-        return False 
+        return False
     if 'mbedtls' in root:
-        return False 
+        return False
     if 'mock' in root or 'mock' in name:
-        return False                
+        return False
     if (name[-3:] == '.md' or name[-3:] == '.py' or name[-2:] == '.c') and 'network.c' not in name:
         return True
     else:
@@ -152,15 +152,15 @@ def getAllFiles(targets, first):
         for root, dirs, files in os.walk(target, topdown=True):
             dirs.sort()
             files.sort()
-            for name in files: # or name[-2:] == '.h' 
-                if filterFiles(root, name):                     
-                    if first or name in diff:            
+            for name in files: # or name[-2:] == '.h'
+                if filterFiles(root, name):
+                    if first or name in diff:
                         neededFiles.append((os.path.join(root, name)))
-                    allFiles.append((os.path.join(root, name)))    
+                    allFiles.append((os.path.join(root, name)))
                     if len(allFiles) >= MAX_FILES:
                         return allFiles,neededFiles
     return allFiles,neededFiles
-    
+
 def drawText(f,font,titleFont,titleHeight,charHeight):
 
     sys.stdout.write("\r{0}                         ".format(str(f)))
@@ -168,23 +168,23 @@ def drawText(f,font,titleFont,titleHeight,charHeight):
 
     blames = git_info.getBlame(f)
 
-    source = processFile(f)       
+    source = processFile(f)
 
     imgHeight = titleHeight*3 + (5 +len(source))*charHeight #Override
     imgWidth = MAX_WIDTH
 
-    imgFile = Image.new("RGBA", (imgWidth, imgHeight),background) 
-    drawFile = ImageDraw.Draw(imgFile)    
+    imgFile = Image.new("RGBA", (imgWidth, imgHeight),background)
+    drawFile = ImageDraw.Draw(imgFile)
 
     name = str(os.path.split(f)[1])
-    vOffset = titleHeight 
+    vOffset = titleHeight
     drawFile.text((hOffset, vOffset),name,greenish,font=titleFont)
     vOffset += titleHeight * 2
-    
+
     for y, srcs in enumerate(zip(source[:MAX_LINES],blames)):
         line, blame = srcs
         if len( line.strip() ) == 0 or len(blame.strip()) == 0:
-            continue          
+            continue
         if y + 1 < len(source):
             if show_age:
                 i1 = blame.find(' 201') + 1
@@ -194,7 +194,7 @@ def drawText(f,font,titleFont,titleHeight,charHeight):
                     diff = newest
                 elif diff > oldest:
                     diff = oldest
-                age = 255 - int(255*(diff-newest)/(oldest-newest))   # newest commit is 255, oldest is 0                      
+                age = 255 - int(255*(diff-newest)/(oldest-newest))   # newest commit is 255, oldest is 0
                 aged_color = (age,age,age,255) # Dark blue. Newer commits are brighter. Older commits approach dark blue.
 
             author = blame[blame.find('<')+1:blame.find('>')]
@@ -232,7 +232,7 @@ def drawImages(output_file_name, allFiles, scale_div=1):
 
     print(('Processing ' + str(len(allFiles)) + ' files...'))
     fileImages = []
-    for i,f in enumerate(sorted(allFiles)):        
+    for i,f in enumerate(sorted(allFiles)):
         region = drawText(f,font,titleFont,titleHeight,charHeight)
 
         new_w = int(region.size[0]*scale_div)
@@ -248,8 +248,8 @@ def drawImages(output_file_name, allFiles, scale_div=1):
     return fileImages
 
 def drawBlank(output_file_name, imgWidth, imgHeight):
-    imgFile = Image.new("RGBA", (imgWidth, imgHeight),background) 
-    imgFile.save(output_file_name,'PNG')   
+    imgFile = Image.new("RGBA", (imgWidth, imgHeight),background)
+    imgFile.save(output_file_name,'PNG')
     return output_file_name
 
 def processFile(filename):
@@ -280,7 +280,7 @@ def cornerText(target, working_file_name):
     y = ROW_OFFSET
     overlaid = image_tools.overlayLines(working_file_name, text, line_colors, 40, x, y)
     return overlaid
-    
+
 def centerText(target, working_file_name, extra = False):
     text = []
     line_colors = []
@@ -294,8 +294,8 @@ def centerText(target, working_file_name, extra = False):
         for author in sorted( authors):
             text.append(author + ' ' + str(author_lines[author]))
             author_color = authors[author] % len(colors)
-            line_colors.append(colors[author_color])        
-    overlaid = image_tools.overlayLines(working_file_name, text, line_colors, OVERRIDE_FONT, OVERRIDE_X, OVERRIDE_Y,2)        
+            line_colors.append(colors[author_color])
+    overlaid = image_tools.overlayLines(working_file_name, text, line_colors, OVERRIDE_FONT, OVERRIDE_X, OVERRIDE_Y,2)
     return overlaid
 
 def limitHeight(fileImages):
@@ -304,14 +304,14 @@ def limitHeight(fileImages):
     deleted = []
     for image in fileImages:
         whole = Image.open(image)
-        if whole.size[1] > height_limit:            
+        if whole.size[1] > height_limit:
             results = image_tools.separate(image,2)
-            fileImages.remove(image)  
-            deleted.append(image)  
+            fileImages.remove(image)
+            deleted.append(image)
             fileImages = results + fileImages
             added += results
             disk.cleanUp(image)
-        del whole    
+        del whole
     return fileImages
 
 def createImage(target,first=True,index=0,movie=False, info = True, alphabetical_sort = False, forced_width = 0, forced_height = 0):
@@ -319,8 +319,8 @@ def createImage(target,first=True,index=0,movie=False, info = True, alphabetical
     base = git_info.getBaseRepoName(target)
     commit = git_info.getCommitNumber(target)
     output_file_name = OUTPUT_FOLDER + base + '_%04d' % index + '.png'
-    
-    allFiles, neededFiles = getAllFiles([target],first)    
+
+    allFiles, neededFiles = getAllFiles([target],first)
 
     if first:
         scale_div = 1 - len(allFiles)/1000.0
@@ -340,7 +340,7 @@ def createImage(target,first=True,index=0,movie=False, info = True, alphabetical
     newFileImages = drawImages(output_file_name, neededFiles,scale_div)
 
     #newFileImages = limitHeight(newFileImages) # @TODO: Need modify allFiles to include filename changes from chopping files.
-    
+
     folderImages = os.listdir(TEMP_FOLDER)
 
     runImages = []
@@ -357,10 +357,10 @@ def createImage(target,first=True,index=0,movie=False, info = True, alphabetical
         letters = 'abcdefghijklmnopqrstuvwxyz'
         index = 0
         for i,f in enumerate(runImages):
-            img = Image.open(f)      
+            img = Image.open(f)
             name = os.path.split(f)[1]
             letter = name[0].lower()
-            print((letters[index]))      
+            print((letters[index]))
             if letter not in letters or letter != letters[index]:
                 while letter != letters[index] and index < 25:
                     index+=1
@@ -369,27 +369,27 @@ def createImage(target,first=True,index=0,movie=False, info = True, alphabetical
                 pile_file = image_tools.pile(batch)
                 batch = []
                 batch.append(f)
-                separated_files.append(pile_file) 
+                separated_files.append(pile_file)
                 total_height = img.size[1]
             else:
                 batch.append(f)
                 total_height += img.size[1]
         if len(batch) > 0:
-            if TOTAL_HEIGHT - total_height > 0:            
+            if TOTAL_HEIGHT - total_height > 0:
                 batch.append(drawBlank('blank.png',MAX_WIDTH,TOTAL_HEIGHT-total_height))
             pile_file = image_tools.pile(batch)
             batch = []
-            separated_files.append(pile_file)               
+            separated_files.append(pile_file)
     else:
-        pile_file = image_tools.pile(allFileImages)    
+        pile_file = image_tools.pile(allFileImages)
         separated_files = image_tools.separate(pile_file)
-        disk.cleanUp(pile_file)     
+        disk.cleanUp(pile_file)
 
     connected = image_tools.connect(separated_files)
-    disk.cleanUp(separated_files)   
+    disk.cleanUp(separated_files)
 
     if FORCE_EVEN:
-        connected = image_tools.make_even(connected)        
+        connected = image_tools.make_even(connected)
 
     if movie and FORCE_WIDTH and not first:
         img = Image.open(connected)
@@ -400,31 +400,31 @@ def createImage(target,first=True,index=0,movie=False, info = True, alphabetical
         img = Image.open(connected)
         if img.size[1] < forced_height:
             blank = drawBlank('blank.png',img.size[0],forced_height-img.size[1])
-            connected = image_tools.pile([connected,blank])        
-            disk.cleanUp('blank.png')    
+            connected = image_tools.pile([connected,blank])
+            disk.cleanUp('blank.png')
 
     enhanced = image_tools.enhance([connected])
-    disk.cleanUp(connected)    
+    disk.cleanUp(connected)
 
     if CORNER_TEXT:
         overlaid = cornerText(target, enhanced[0])
-        disk.cleanUp(enhanced)        
+        disk.cleanUp(enhanced)
     else:
         overlaid = enhanced[0]
 
-    if info: 
+    if info:
         overlaid2 = centerText(target, overlaid, extra = True)
-        disk.cleanUp(overlaid) 
+        disk.cleanUp(overlaid)
     else:
         overlaid2 = overlaid
-    
+
     # img = Image.open(overlaid2)
     # if img.size[0] > REALLY_BIG:
     #     image_tools.scale(overlaid2,.5)
 
-    disk.move(overlaid2, output_file_name)   
+    disk.move(overlaid2, output_file_name)
     return output_file_name
-        
+
 def gitHistory(target,revisions,info):
     branch = git_info.getBranch(target)
     response = git_info.resetHead(target,branch)
@@ -445,7 +445,7 @@ def gitHistory(target,revisions,info):
         if first:
             img = Image.open(file_name)
             forced_width = img.size[0]
-            forced_height = img.size[1]            
+            forced_height = img.size[1]
 
         resetAuthors()
         response = git_info.checkoutRevision(target, 1)
@@ -456,17 +456,17 @@ def gitHistory(target,revisions,info):
     return branch
 
 
-if __name__ == '__main__':  
+if __name__ == '__main__':
     parser = argparse.ArgumentParser(add_help=True)
-    parser.add_argument("--target", help="Target folder location.")
+    parser.add_argument("--target", help="Target folder path.")
     parser.add_argument("--movie", help="Movie demo.", action="store_true")
-    parser.add_argument("--revs", help="Number of revisions to use in movie.")    
+    parser.add_argument("--revs", help="Number of revisions to use in movie.")
     parser.add_argument("--no_info", help="Exlude text overlay of git commit information.", action="store_true")
-    parser.add_argument("--show_age", help="Color code lines according to age of commit AND by author.", action="store_true")
-    parser.add_argument("--months", help="The number of months to scale the color coding of the commits to.")
+    parser.add_argument("--show_age", help="Color code lines according to commit age AND author.", action="store_true")
+    parser.add_argument("--months", help="Number of months to scale the color coding of commits to.")
     parser.add_argument("--age_only", help="Only color code the lines by age, not author.", action="store_true")
 
-    args = parser.parse_args() 
+    args = parser.parse_args()
 
     if args.months:
         months = int(args.months)
@@ -497,13 +497,13 @@ if __name__ == '__main__':
         revs = DEFAULT_REVS
     else:
         revs = int(args.revs)
-    
-    msg = '\n                                           ~~(OvO)~~     \n'    
+
+    msg = '\n                                           ~~(OvO)~~     \n'
     msg += '\nCreating a bird\'s eye view...\n'
-    msg += 'Folder = {target}\n'.format(target=target) 
+    msg += 'Folder = {target}\n'.format(target=target)
     msg += 'Movie = {movie}\n'.format(movie=str(movie))
     msg += 'Info = {info}\n'.format(info=str(info))
-    msg += 'Revs = {revs}\n'.format(revs=str(revs)) 
+    msg += 'Revs = {revs}\n'.format(revs=str(revs))
     msg += '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
     msg += '                                                      ><> \n'
     print(msg)
@@ -521,8 +521,8 @@ if __name__ == '__main__':
             response = git_info.resetHead(target,branch)
             print(response)
     else:
-        output_file_name = createImage(target=target,info=info)    
+        output_file_name = createImage(target=target,info=info)
         if OPEN_AFTER:
             disk.open(output_file_name)
-    
+
     disk.deleteFolder(TEMP_FOLDER)
