@@ -34,16 +34,18 @@ def cleanUp(files):
         os.remove(f)
 
 def makeFolder(folder):
-    try:
-        os.mkdir(folder)
-    except OSError as ex:
-        print(ex)
+    if not os.path.isdir(folder):
+        try:
+            os.mkdir(folder)
+        except OSError as ex:
+            print(ex)
 
 def deleteFolder(folder):
-    try:
-        shutil.rmtree(folder)
-    except OSError as ex:
-        print(ex)
+    if os.path.isdir(folder):
+        try:
+            shutil.rmtree(folder)
+        except OSError as ex:
+            print(ex)
 
 if __name__ == '__main__':
     pass
