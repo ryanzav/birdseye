@@ -123,7 +123,8 @@ def getAuthorIndex(author):
         index = len(authors)
         authors[author] = index
         author_lines[author] = 1
-        print(('\nNew author: ' + author))
+        msg = '\rNew author: ' + author
+        print(msg)
     else:
         author_lines[author] += 1
     return authors[author]
@@ -162,13 +163,11 @@ def getAllFiles(targets, first):
     return allFiles,neededFiles
 
 def drawText(f,font,titleFont,titleHeight,charHeight):
-
-    sys.stdout.write("\r{0}                         ".format(str(f)))
-    sys.stdout.flush()
-
     blames = git_info.getBlame(f)
 
     source = processFile(f)
+    if not source:
+        return None
 
     imgHeight = titleHeight*3 + (5 +len(source))*charHeight #Override
     imgWidth = MAX_WIDTH
@@ -224,8 +223,16 @@ def drawText(f,font,titleFont,titleHeight,charHeight):
     del drawFile
     return region
 
-def drawImages(output_file_name, allFiles, scale_div=1):
+def printOver(msg):
+    spaces = 80 - len(msg)
+    if spaces < 0:
+        spaces = 0
+    msg = "\r{}{}".format(str(msg),' '*spaces)
+    msg = msg[:80]
+    sys.stdout.write(msg)
+    sys.stdout.flush()
 
+def drawImages(output_file_name, allFiles, scale_div=1):
     font = ImageFont.truetype("Courier Prime Code.ttf", charHeight)
     titleFont = ImageFont.truetype("Courier Prime Code.ttf", titleHeight)
     bigFont = ImageFont.truetype("Courier Prime Code.ttf", bigHeight)
@@ -233,7 +240,10 @@ def drawImages(output_file_name, allFiles, scale_div=1):
     print(('Processing ' + str(len(allFiles)) + ' files...'))
     fileImages = []
     for i,f in enumerate(sorted(allFiles)):
+        printOver(str(f))
         region = drawText(f,font,titleFont,titleHeight,charHeight)
+        if not region:
+            continue
 
         new_w = int(region.size[0]*scale_div)
         new_h = int(region.size[1]*scale_div)
@@ -244,6 +254,7 @@ def drawImages(output_file_name, allFiles, scale_div=1):
         region.save(fileImage, "PNG")
         del region
         fileImages.append(fileImage)
+    printOver('File processing complete.')
     print('')
     return fileImages
 
@@ -255,15 +266,15 @@ def drawBlank(output_file_name, imgWidth, imgHeight):
 def processFile(filename):
     try:
         f = open(filename,'r')
-        data = f.read()
+        data = f.read().decode('utf-8')
         f.close()
     except IOError:
         print("Failed to open file!")
-        return ["Failed to open file!"]
+        return None
     except UnicodeDecodeError:
         print("Failed to decode file!")
-        return ["Failed to decode file!"]
-
+        return None
+    
     databyline = data.split('\n')
     return databyline
 
@@ -381,7 +392,7 @@ def createImage(target,first=True,index=0,movie=False, info = True, alphabetical
             batch = []
             separated_files.append(pile_file)
     else:
-        pile_file = image_tools.pile(allFileImages)
+        pile_file = image_tools.pile(runImages)
         separated_files = image_tools.separate(pile_file)
         disk.cleanUp(pile_file)
 
