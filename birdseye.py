@@ -107,6 +107,8 @@ colors = [
 authors = {}
 author_lines = {}
 
+TERMINAL_WIDTH = 80
+
 def resetAuthors():
     global author_lines
     for author in author_lines:
@@ -169,6 +171,9 @@ def drawText(f,font,titleFont,titleHeight,charHeight):
     if not source:
         return None
 
+    while len(blames) < len(source):
+        blames.append("<not.committed.yet>")
+
     imgHeight = titleHeight*3 + (5 +len(source))*charHeight #Override
     imgWidth = MAX_WIDTH
 
@@ -224,11 +229,11 @@ def drawText(f,font,titleFont,titleHeight,charHeight):
     return region
 
 def printOver(msg):
-    spaces = 80 - len(msg)
+    spaces = TERMINAL_WIDTH - len(msg)
     if spaces < 0:
         spaces = 0
     msg = "\r{}{}".format(str(msg),' '*spaces)
-    msg = msg[:80]
+    msg = msg[:TERMINAL_WIDTH]
     sys.stdout.write(msg)
     sys.stdout.flush()
 
