@@ -318,7 +318,7 @@ def createImage(target,first=True,index=0,movie=False, info = True, alphabetical
     global scale_div
     base = git_info.getBaseRepoName(target)
     commit = git_info.getCommitNumber(target)
-    output_file_name = OUTPUT_FOLDER + base + '_%04d' % index + '.png'
+    output_file_name = os.path.join(OUTPUT_FOLDER, base + '_%04d' % index + '.png')
 
     allFiles, neededFiles = getAllFiles([target],first)
 
