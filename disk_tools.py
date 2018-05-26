@@ -31,7 +31,10 @@ def cleanUp(files):
     if type(files) != list:
         files = [files]
     for f in files:
-        os.remove(f)
+        try: 
+            os.remove(f)
+        except:
+            print("Deletion of {} failed.".format(f))
 
 def makeFolder(folder):
     if not os.path.isdir(folder):
