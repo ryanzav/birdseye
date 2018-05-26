@@ -194,7 +194,11 @@ def drawText(f,font,titleFont,titleHeight,charHeight):
             if show_age:
                 i1 = blame.find(' 201') + 1
                 date = blame[i1:i1 + 1 + blame[i1+1:].find(' ')]
-                diff = time.time() - calendar.timegm(time.strptime(date, DATE_FORMAT))
+                try:
+                    diff = time.time() - calendar.timegm(time.strptime(date, DATE_FORMAT))
+                except:
+                    print("Bad date format.")
+                    diff = newest
                 if diff < newest:
                     diff = newest
                 elif diff > oldest:
@@ -366,6 +370,8 @@ def createImage(target,first=True,index=0,movie=False, info = True, alphabetical
             if os.path.split(match)[1] in image:
                 runImages.append(os.path.join(TEMP_FOLDER, image))
     runImages.sort()
+    if len(runImages) == 0:
+        return
 
     if alphabetical_sort:
         total_height = 0
