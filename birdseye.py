@@ -125,8 +125,9 @@ def getAuthorIndex(author):
         index = len(authors)
         authors[author] = index
         author_lines[author] = 1
-        msg = '\rNew author: ' + author
-        print(msg)
+        msg = 'New author: ' + author
+        printOver(msg)
+        print('')
     else:
         author_lines[author] += 1
     return authors[author]
@@ -532,7 +533,7 @@ if __name__ == '__main__':
             base = git_info.getBaseRepoName(target)
             make_movie.combine(OUTPUT_FOLDER,base)
             if OPEN_AFTER:
-                disk.open(OUTPUT_FOLDER + 'out.mp4')
+                disk.open(os.path.join(OUTPUT_FOLDER, 'out.mp4'))
         finally:
             response = git_info.resetHead(target,branch)
             print(response)
