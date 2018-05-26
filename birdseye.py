@@ -521,7 +521,7 @@ if __name__ == '__main__':
     msg += 'Movie = {movie}\n'.format(movie=str(movie))
     msg += 'Info = {info}\n'.format(info=str(info))
     msg += 'Revs = {revs}\n'.format(revs=str(revs))
-    msg += '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+    msg += '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n'
     msg += '                                                      ><> \n'
     print(msg)
 
