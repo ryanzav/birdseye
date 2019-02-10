@@ -283,8 +283,14 @@ def processFile(filename):
         print("Failed to open file!")
         return None
     except UnicodeDecodeError:
-        print("Failed to decode file!")
-        return None
+        print("Failed to decode file as UTF-8! Trying something else!")
+        try:
+            f = open(filename,'r')
+            data = f.read()
+            f.close()
+        except UnicodeDecodeError:
+            print("Retry open failed!")
+            return None
     
     databyline = data.split('\n')
     return databyline
