@@ -276,12 +276,8 @@ def drawBlank(output_file_name, imgWidth, imgHeight):
 
 def processFile(filename):
     try:
-        f = open(filename,'r')
+        f = open(filename,'r',encoding='utf-8')
         data = f.read()
-        try:
-            text = data.decode('utf-8')
-        except AttributeError:
-            text = data
         f.close()
     except IOError:
         print("Failed to open file!")
@@ -290,7 +286,7 @@ def processFile(filename):
         print("Failed to decode file!")
         return None
     
-    databyline = text.split('\n')
+    databyline = data.split('\n')
     return databyline
 
 def cornerText(target, working_file_name):
