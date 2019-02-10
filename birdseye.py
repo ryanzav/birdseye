@@ -285,7 +285,7 @@ def processFile(filename):
     except UnicodeDecodeError:
         print("Failed to decode file as UTF-8! Trying something else!")
         try:
-            f = open(filename,'r')
+            f = open(filename,'r',encoding='utf_16_le')
             data = f.read()
             f.close()
         except UnicodeDecodeError:
