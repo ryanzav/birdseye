@@ -15,7 +15,7 @@ def getBlame(f):
         print("Error: " + e.output)
         response = ''        
     except UnicodeDecodeError as e:
-        print("Error: " + e)
+        print("Error: UnicodeDecodeError")
         response = '' 
     if len(err) > 0:
         if "no such path" in err:
