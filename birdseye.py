@@ -152,8 +152,11 @@ def getAllFiles(targets, first):
     neededFiles = []
     for target in targets:
         target = os.path.abspath(target)
-        diff = git_info.getDiff(target)
-        print(("Diff:" + diff))
+        if not first: # Don't run diff if not doing sequence.
+            diff = git_info.getDiff(target)
+            print(("Diff:" + diff))
+        else:
+            diff = ""
         for root, dirs, files in os.walk(target, topdown=True):
             dirs.sort()
             files.sort()
