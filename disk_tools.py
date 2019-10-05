@@ -14,6 +14,9 @@ copy = shutil.copyfile
 move = shutil.move
 
 def open(f):
+    if not f:
+        print("Error: Cannot open with no filename.")
+        return
     if sys.platform == "linux2":
         cmd = "xdg-open " + f
     elif sys.platform == "darwin":

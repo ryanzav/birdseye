@@ -168,13 +168,12 @@ def getAllFiles(targets, first):
 
 def drawText(f,font,titleFont,titleHeight,charHeight):
     blames = git_info.getBlame(f)
+    if not blames:
+        return None
 
     source = processFile(f)
     if not source:
         return None
-
-    while len(blames) < len(source):
-        blames.append("<not.committed.yet>")
 
     imgHeight = titleHeight*3 + (5 +len(source))*charHeight #Override
     imgWidth = MAX_WIDTH
@@ -378,7 +377,8 @@ def createImage(target,first=True,index=0,movie=False, info = True, alphabetical
                 runImages.append(os.path.join(TEMP_FOLDER, image))
     runImages.sort()
     if len(runImages) == 0:
-        return
+        print("Error: No images found.")
+        return None
 
     if alphabetical_sort:
         total_height = 0
@@ -532,8 +532,9 @@ if __name__ == '__main__':
     msg += '\nCreating a bird\'s eye view...\n'
     msg += 'Folder = {target}\n'.format(target=target)
     msg += 'Movie = {movie}\n'.format(movie=str(movie))
+    if movie:
+        msg += 'Revs = {revs}\n'.format(revs=str(revs))
     msg += 'Info = {info}\n'.format(info=str(info))
-    msg += 'Revs = {revs}\n'.format(revs=str(revs))
     msg += '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n'
     msg += '                                                      ><> \n'
     print(msg)

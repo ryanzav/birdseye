@@ -5,20 +5,29 @@ def getBlame(f):
     folder = os.path.split(f)[0]
     cwd = os.getcwd()
     os.chdir(folder)
-    cmd = "git blame --abbrev=0 -e " + f
+    cmd = "git blame --abbrev=0 -e '" + f + "'"
     try:        
         sub = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         response, err = sub.communicate()     
-        response = response.decode()          
+        response = response.decode() 
+        err = err.decode()         
     except subprocess.CalledProcessError as e:
-        print(e.output)
+        print("Error: " + e.output)
         response = ''        
     except UnicodeDecodeError as e:
-        print(e)
-        response = ''                
+        print("Error: " + e)
+        response = '' 
+    if len(err) > 0:
+        if "no such path" in err:
+            response = ''  # Ignore new file.
+        else:
+            print("Error: " + err)
+            response = ''           
+    if response == '':
+        data_by_line = None
+    else:
+        data_by_line = response.split('\n')
     os.chdir(cwd)
-        
-    data_by_line = response.split('\n')
     return data_by_line
 
 def getAuthor(f,line):
@@ -57,7 +66,7 @@ def getRepo(folder):
         response = response.decode()        
     except subprocess.CalledProcessError as e:
         print(e.output)
-        reponse = ''        
+        response = ''        
     os.chdir(cwd)    
     return response
 
@@ -70,7 +79,7 @@ def getBranch(folder):
         response = response.decode()        
     except subprocess.CalledProcessError as e:
         print(e.output)
-        reponse = ''        
+        response = ''        
     os.chdir(cwd)    
     return response[2:]
 
@@ -83,7 +92,7 @@ def getDiff(folder):
         response = response.decode()
     except subprocess.CalledProcessError as e:
         print(e.output)
-        reponse = ''        
+        response = ''        
     os.chdir(cwd)    
     return response
 
@@ -93,7 +102,7 @@ def checkoutRevision(folder, prev):
     os.chdir(folder)    
     try:
         sub = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        out, err = sub.communicate()
+        _, err = sub.communicate()
         err  = err.decode()
     except subprocess.CalledProcessError as e:
         print('exception')
@@ -110,7 +119,7 @@ def resetHead(folder, branch):
         response = response.decode()        
     except subprocess.CalledProcessError as e:
         print(e.output)
-        reponse = ''        
+        response = ''        
     os.chdir(cwd)    
     return response
 
@@ -189,8 +198,9 @@ if __name__ == '__main__':
     folder = os.path.split(f)[0]
     line = 20
     print(getAuthor(f,line))
-
-    print(resetHead(folder))
+    
+    branch = git_info.getBranch(folder)
+    print(resetHead(folder,branch))
     print(checkoutRevision(folder,10))
 
     print('lines: ' + getLineCount(folder))
