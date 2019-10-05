@@ -36,11 +36,12 @@ def getAuthor(f,line):
     folder = os.path.split(f)[0]
     cwd = os.getcwd()
     os.chdir(folder)
-    cmd = "git blame -p -L " + str(line) + ',' + str(line) + ' ' + f
+    cmd = "git blame -p -L " + str(line) + "," + str(line) + " '" + f + "'" 
     try:        
         sub = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         response, err = sub.communicate()    
         response = response.decode()    
+        err = err.decode()
     except subprocess.CalledProcessError as e:
         print(e.output)
         response = ''        
@@ -189,38 +190,47 @@ def getBaseRepoName(folder):
     return base
 
 if __name__ == '__main__':
-    result =  checkoutRevision('../b',1)
-    print('result')
-    print(result)
-    exit()
-   # f = "/Users/ryanz/Desktop/devices-nlight-air-sub-ghz/common/BLE-ctrl/BLE-task.c"
-    f = "/Users/ryanz/Desktop/lib-nilon/nlight.py"
+    cwd = os.getcwd()
+    f = cwd + '/birdseye.py'
     folder = os.path.split(f)[0]
     line = 20
+    print()
+    print("Get author: ")
     print(getAuthor(f,line))
     
-    branch = git_info.getBranch(folder)
-    print(resetHead(folder,branch))
-    print(checkoutRevision(folder,10))
-
-    print('lines: ' + getLineCount(folder))
+    #branch = getBranch(folder)
+    #print(resetHead(folder,branch))
+    #print(checkoutRevision(folder,10))
+    print()
+    print("Line count: " + getLineCount(folder))
 
     file_count = getFileCount(folder)
-    print(file_count)
+    print()    
+    print("File count: " + file_count)
 
     last_commit = getLastCommit(folder)
+    print()    
+    print("Last commit: ")
     print(last_commit)
 
     last_commit_date = getLastCommitDate(folder)
+    print()
+    print("Last commit date: ")
     print(last_commit_date)
 
     commit_number = getCommitNumber(folder)
+    print()
+    print("Last commit number: ")
     print(commit_number)
 
     repo = getRepo(folder)
-    print(repo)
-    
+    print()    
+    print("Repo: " + repo)
 
     base = parseRepo(repo)
-    print(base)
-    print(getBaseRepoName(folder))
+    print()
+    print("Base: " + base)
+    print("Base repo name: " + getBaseRepoName(folder))
+
+    print()
+    #print(resetHead(folder,branch))
