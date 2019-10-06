@@ -34,6 +34,7 @@ months = 6 # Default number of months to use to scale the coloring of lines.
 
 scale_div = 1
 
+REGENERATE_ALL = True
 OPEN_AFTER = True
 REALLY_BIG = 5000
 
@@ -152,7 +153,7 @@ def getAllFiles(targets, first):
     neededFiles = []
     for target in targets:
         target = os.path.abspath(target)
-        if not first: # Don't run diff if not doing sequence.
+        if not first and not REGENERATE_ALL: # Don't run diff if not doing sequence or if regenerating all images.
             diff = git_info.getDiff(target)
             print(("Diff:" + diff))
         else:
@@ -162,7 +163,7 @@ def getAllFiles(targets, first):
             files.sort()
             for name in files: # or name[-2:] == '.h'
                 if filterFiles(root, name):
-                    if True: #first or name in diff:
+                    if REGENERATE_ALL or first or name in diff:
                         neededFiles.append((os.path.join(root, name)))
                     allFiles.append((os.path.join(root, name)))
                     if len(allFiles) >= MAX_FILES:
