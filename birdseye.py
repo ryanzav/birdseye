@@ -1,115 +1,104 @@
-'''
-Created on Feb 21, 2016
+"""Birdseye
+This script does a git-blame on each line of a project's source code and then
+generates a color coded image of the source text for the entire project.
 
-@author: ryanz
-'''
+The purpose of this script is to help visualize a git repo's history in
+various ways.
+A movie can be generated with ffmpeg that shows the evolution of a repo.
+
+This requires 'pillow' which is a fork of the Python Image Library (PIL).
+"""
 
 from PIL import Image
 from PIL import ImageFont
 from PIL import ImageDraw
 from PIL import ImageEnhance
+from PIL.FontFile import WIDTH
 
 import os
 import time
 import calendar
-from PIL.FontFile import WIDTH
-
 import sys
-import git_info
-import image_tools
-import disk_tools as disk
 import argparse
 import math
 import os.path
 from io import open
 
+import git_info
+import image_tools
+import disk_tools as disk
 import make_movie
 
-show_age = False
-age_only = False
-DATE_FORMAT = "%Y-%m-%d"
-day = 24 * 60 * 60 # Seconds in a day
-newest = 0 # Number of seconds old for a line to be colored fully bright.
-months = 6 # Default number of months to use to scale the coloring of lines.
+# Configuration
 
-scale_div = 1
-
-REGENERATE_ALL = True
-OPEN_AFTER = True
-REALLY_BIG = 5000
-
-DEFAULT_REVS = 5
+NEWEST = 0              # Number of seconds old for a line to be colored fully bright.
+MONTHS = 6              # Default number of months to use to scale the coloring of lines.
+REGENERATE_ALL = True   # Regenerate all files and don't optimize by only updating files shown in diff.
+OPEN_AFTER = True       # Open the resulting image or movie with a local application.
+DEFAULT_REVS = 5        # The default number of commits to include in a movie.
 TOTAL_HEIGHT = 5000
-
 FORCE_WIDTH = True
-
 FORCE_EVEN = True
+MAX_FILES = 100000
+MAX_LINES = 100000
+HEIGHT_LIMIT = 4000     # Max file height before file is split.
+CORNER_TEXT = False
+CENTER_TEXT = False
+OVERRIDE_FONT = None
+OVERRIDE_X = None
+OVERRIDE_Y = None
+HORIZONTAL_GAP = 200
+HOFFSET = 40
+ROW_OFFSET = 20
+TITLE_HEIGHT = 20
+CHAR_HEIGHT = 3
+CHAR_WIDTH = 1
+MAX_CHARS = 96
+MAX_WIDTH = MAX_CHARS * CHAR_WIDTH + HORIZONTAL_GAP
+MAX_HEIGHT = MAX_LINES * CHAR_HEIGHT
+TERMINAL_WIDTH = 80
 
+# Constants
+
+DATE_FORMAT = "%Y-%m-%d"
+DAY = 24 * 60 * 60      # Seconds in a day
 SOURCE_FOLDER = '.'
 TEMP_FOLDER = os.path.join('.', 'temp')
 OUTPUT_FOLDER = os.path.join('.', 'output')
 
-MAX_FILES = 100000
-MAX_LINES = 100000
-HEIGHT_LIMIT = 4000 # Max file height before file is split.
-
-CORNER_TEXT = False
-CENTER_TEXT = False
-
-OVERRIDE_FONT = None
-OVERRIDE_X = None
-OVERRIDE_Y = None
-
-HORIZONTAL_GAP = 200
-hOffset = 40
-ROW_OFFSET = 20
-
-bigHeight = 100
-titleHeight = 20
-charHeight = 3
-charWidth = 1
-MAX_CHARS = 96
-MAX_WIDTH = MAX_CHARS * charWidth + HORIZONTAL_GAP
-
-MAX_HEIGHT = MAX_LINES * charHeight
-
-ROTATION = 0
-
-greenish = (32,200,170,255)
-bluish = (77,77,255,255)
-black = (0,0,0,255)
-white = (255,255,255,255)
-darkblue = (0,0,40,255)
-transparent = (0,0,0,0)
+greenish = (32, 200, 170, 255)
+bluish = (77, 77, 255, 255)
+black = (0, 0, 0, 255)
+white = (255, 255, 255, 255)
+darkblue = (0, 0, 40, 255)
+transparent = (0, 0, 0, 0)
 background = darkblue
-
-
 colors = [
-        (230,25,75,255), # red
-        (60,180,75,255), # green
-        (255,225,25,255), # yellow
-        (0,130,200,255), # blue
-        (245,130,48,255), #orange
-        (145,30,180,255), # purple
-        (70,240,240,255), # cyan
-        (240,50,230,255), # magenta
-        (210,245,60,255), # lime
-        (250,190,190,255), # pink
-        (0,128,128,255), # teal
-        (230,190,255,255), # lavender
-        (170,110,40,255), # brown
-        (255,250,200,255), # beige
-        (128,0,0,255), # maroon
-        (170,255,195,255), # mint
-        (128,128,0,255), # olive
-        (255,215,180,255), # coral
-        (0,0,128,255) #navy
+        (230, 25, 75, 255),     # red
+        (60, 180, 75, 255),     # green
+        (255, 225, 25, 255),    # yellow
+        (0, 130, 200, 255),     # blue
+        (245, 130, 48, 255),    # orange
+        (145, 30, 180, 255),    # purple
+        (70, 240, 240, 255),    # cyan
+        (240, 50, 230, 255),    # magenta
+        (210, 245, 60, 255),    # lime
+        (250, 190, 190, 255),   # pink
+        (0, 128, 128, 255),     # teal
+        (230, 190, 255, 255),   # lavender
+        (170, 110, 40, 255),    # brown
+        (255, 250, 200, 255),   # beige
+        (128, 0, 0, 255),       # maroon
+        (170, 255, 195, 255),   # mint
+        (128, 128, 0, 255),     # olive
+        (255, 215, 180, 255),   # coral
+        (0, 0, 128, 255)       # navy
         ]
+
+# Variables
 
 authors = {}
 author_lines = {}
-
-TERMINAL_WIDTH = 80
 
 def resetAuthors():
     global author_lines
@@ -187,7 +176,7 @@ def drawText(f,font,titleFont,titleHeight,charHeight):
 
     name = str(os.path.split(f)[1])
     vOffset = titleHeight
-    drawFile.text((hOffset, vOffset),name,greenish,font=titleFont)
+    drawFile.text((HOFFSET, vOffset),name,greenish,font=titleFont)
     vOffset += titleHeight * 2
 
     for y, srcs in enumerate(zip(source[:MAX_LINES],blames)):
@@ -202,12 +191,12 @@ def drawText(f,font,titleFont,titleHeight,charHeight):
                     diff = time.time() - calendar.timegm(time.strptime(date, DATE_FORMAT))
                 except:
                     print("Bad date format.")
-                    diff = newest
-                if diff < newest:
-                    diff = newest
+                    diff = NEWEST
+                if diff < NEWEST:
+                    diff = NEWEST
                 elif diff > oldest:
                     diff = oldest
-                age = 255 - int(255*(diff-newest)/(oldest-newest))   # newest commit is 255, oldest is 0
+                age = 255 - int(255*(diff-NEWEST)/(oldest-NEWEST))   # newest commit is 255, oldest is 0
                 aged_color = (age,age,age,255) # Dark blue. Newer commits are brighter. Older commits approach dark blue.
 
             author = blame[blame.find('<')+1:blame.find('>')]
@@ -226,11 +215,10 @@ def drawText(f,font,titleFont,titleHeight,charHeight):
             else:
                 line_color = author_color
 
-            drawFile.text((hOffset, vOffset + charHeight*y),line,line_color,font=font)
+            drawFile.text((HOFFSET, vOffset + charHeight*y),line,line_color,font=font)
 
     # The box is a 4-tuple defining the left, upper, right, and lower pixel coordinate.
     # The Python Imaging Library uses a coordinate system with (0, 0) in the upper left corner.
-    height = vOffset + ( len(source) + 5 )*charHeight
     box = (0, 0, imgWidth, imgHeight)
     region = imgFile.crop(box)
     del imgFile
@@ -247,15 +235,14 @@ def printOver(msg):
     sys.stdout.flush()
 
 def drawImages(output_file_name, allFiles, scale_div=1):
-    font = ImageFont.truetype("Courier Prime Code.ttf", charHeight)
-    titleFont = ImageFont.truetype("Courier Prime Code.ttf", titleHeight)
-    bigFont = ImageFont.truetype("Courier Prime Code.ttf", bigHeight)
+    font = ImageFont.truetype("Courier Prime Code.ttf", CHAR_HEIGHT)
+    titleFont = ImageFont.truetype("Courier Prime Code.ttf", TITLE_HEIGHT)
 
     print(('Processing ' + str(len(allFiles)) + ' files...'))
     fileImages = []
-    for i,f in enumerate(sorted(allFiles)):
+    for _,f in enumerate(sorted(allFiles)):
         printOver(str(f))
-        region = drawText(f,font,titleFont,titleHeight,charHeight)
+        region = drawText(f,font,titleFont,TITLE_HEIGHT,CHAR_HEIGHT)
         if not region:
             print("Error: No region.")
             continue
@@ -349,7 +336,6 @@ def limitHeight(fileImages):
 def createImage(target,first=True,index=0,movie=False, info = True, alphabetical_sort = False, forced_width = 0, forced_height = 0):
     global scale_div
     base = git_info.getBaseRepoName(target)
-    commit = git_info.getCommitNumber(target)
     output_file_name = os.path.join(OUTPUT_FOLDER, base + '_%04d' % index + '.png')
 
     allFiles, neededFiles = getAllFiles([target],first)
@@ -361,7 +347,7 @@ def createImage(target,first=True,index=0,movie=False, info = True, alphabetical
         print(('Scale = ' + str(scale_div)))
 
     allFileImages = []
-    for i,f in enumerate(allFiles):
+    for _,f in enumerate(allFiles):
         dirname, filename = os.path.split(f)
         fileImage = os.path.join(TEMP_FOLDER, dirname.split(os.path.sep)[-1] + '_' + filename + '.png')
         allFileImages.append(fileImage)
@@ -369,9 +355,7 @@ def createImage(target,first=True,index=0,movie=False, info = True, alphabetical
     disk.makeFolder(TEMP_FOLDER)
     disk.makeFolder(OUTPUT_FOLDER)
 
-    newFileImages = drawImages(output_file_name, neededFiles,scale_div)
-
-    #newFileImages = limitHeight(newFileImages) # @TODO: Need modify allFiles to include filename changes from chopping files.
+    drawImages(output_file_name, neededFiles, scale_div)
 
     folderImages = os.listdir(TEMP_FOLDER)
 
@@ -391,7 +375,7 @@ def createImage(target,first=True,index=0,movie=False, info = True, alphabetical
         separated_files = []
         letters = 'abcdefghijklmnopqrstuvwxyz'
         index = 0
-        for i,f in enumerate(runImages):
+        for _,f in enumerate(runImages):
             img = Image.open(f)
             name = os.path.split(f)[1]
             letter = name[0].lower()
@@ -453,10 +437,6 @@ def createImage(target,first=True,index=0,movie=False, info = True, alphabetical
     else:
         overlaid2 = overlaid
 
-    # img = Image.open(overlaid2)
-    # if img.size[0] > REALLY_BIG:
-    #     image_tools.scale(overlaid2,.5)
-
     disk.move(overlaid2, output_file_name)
     return output_file_name
 
@@ -490,7 +470,6 @@ def gitHistory(target,revisions,info):
 
     return branch
 
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(add_help=True)
     parser.add_argument("--target", help="Target folder path.")
@@ -505,7 +484,9 @@ if __name__ == '__main__':
 
     if args.months:
         months = int(args.months)
-    oldest = months * 30 * day # Number of seconds old for a line to be colored black.
+    else:
+        months = MONTHS
+    oldest = months * 30 * DAY # Number of seconds old for a line to be colored black.
 
     if args.movie:
         movie = True
@@ -519,9 +500,13 @@ if __name__ == '__main__':
 
     if args.show_age:
         show_age = True
+    else:
+        show_age = False
 
     if args.age_only:
         age_only = True
+    else:
+        age_only = False
 
     if args.target is None:
         target = SOURCE_FOLDER
