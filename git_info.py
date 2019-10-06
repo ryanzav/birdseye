@@ -5,7 +5,7 @@ def getBlame(f):
     folder = os.path.split(f)[0]
     cwd = os.getcwd()
     os.chdir(folder)
-    cmd = "git blame --abbrev=0 -e '" + f + "'"
+    cmd = "git blame --abbrev=0 -e \"" + f + "\""
     try:        
         sub = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         response, err = sub.communicate()     
