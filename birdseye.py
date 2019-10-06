@@ -162,7 +162,7 @@ def getAllFiles(targets, first):
             files.sort()
             for name in files: # or name[-2:] == '.h'
                 if filterFiles(root, name):
-                    if first or name in diff:
+                    if True: #first or name in diff:
                         neededFiles.append((os.path.join(root, name)))
                     allFiles.append((os.path.join(root, name)))
                     if len(allFiles) >= MAX_FILES:
@@ -256,6 +256,7 @@ def drawImages(output_file_name, allFiles, scale_div=1):
         printOver(str(f))
         region = drawText(f,font,titleFont,titleHeight,charHeight)
         if not region:
+            print("Error: No region.")
             continue
 
         new_w = int(region.size[0]*scale_div)
