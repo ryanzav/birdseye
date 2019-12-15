@@ -201,6 +201,7 @@ def getAllFiles(targets, first):
 
 
 def drawText(f, font, titleFont, titleHeight, charHeight):
+    '''Generate an image region in memory based on the text of the input file.'''
     source = processFile(f)
     if not source:
         return None
@@ -215,27 +216,35 @@ def drawText(f, font, titleFont, titleHeight, charHeight):
             else:
                 return None
 
-    imgHeight = titleHeight*3 + (5 + len(source))*charHeight  # Override
+    imgHeight = titleHeight*3 + (5 + len(source))*charHeight
     imgWidth = MAX_WIDTH
 
     imgFile = Image.new("RGBA", (imgWidth, imgHeight), background)
     drawFile = ImageDraw.Draw(imgFile)
 
+    # Draw the filename.
     name = str(os.path.split(f)[1])
     vOffset = titleHeight
     drawFile.text((HOFFSET, vOffset), name, greenish, font=titleFont)
     vOffset += titleHeight * 2
 
+    # Draw each line.
     for y, srcs in enumerate(zip(source[:MAX_LINES], blames)):
         line, blame = srcs
         if len(line.strip()) == 0 or len(blame.strip()) == 0:
             continue
         if y + 1 < len(source):
+            # Calculate age for each line.
             if show_age:
-                i1 = blame.find(' 201') + 1
+                # Whoa! This is about to break in 2020. LOL.
+                # Get the index after the year from the blame line.
+                i1 = blame.find(' 20') + 1
                 date = blame[i1:i1 + 1 + blame[i1+1:].find(' ')]
                 try:
-                    diff = time.time() - calendar.timegm(time.strptime(date, DATE_FORMAT))
+                    diff = (
+                        time.time()
+                        - calendar.timegm(time.strptime(date, DATE_FORMAT))
+                    )
                 except:
                     print("Bad date format.")
                     diff = NEWEST
@@ -245,7 +254,8 @@ def drawText(f, font, titleFont, titleHeight, charHeight):
                     diff = oldest
                 # newest commit is 255, oldest is 0
                 age = 255 - int(255*(diff-NEWEST)/(oldest-NEWEST))
-                # Dark blue. Newer commits are brighter. Older commits approach dark blue.
+                # Dark blue. Newer commits are brighter.
+                # Older commits approach dark blue.
                 aged_color = (age, age, age, 255)
 
             author = blame[blame.find('<')+1:blame.find('>')]
@@ -288,6 +298,7 @@ def printOver(msg):
 
 
 def drawImages(output_file_name, allFiles, scale_div=1):
+    '''Generate an image for each target file.'''
     font = ImageFont.truetype("Courier Prime Code.ttf", CHAR_HEIGHT)
     titleFont = ImageFont.truetype("Courier Prime Code.ttf", TITLE_HEIGHT)
 
@@ -295,22 +306,27 @@ def drawImages(output_file_name, allFiles, scale_div=1):
     fileImages = []
     for _, f in enumerate(sorted(allFiles)):
         printOver(str(f))
+        
+        # Generate the image in memory.
         region = drawText(f, font, titleFont, TITLE_HEIGHT, CHAR_HEIGHT)
         if not region:
             print("Error: No region.")
             continue
-
+        
+        # Scale each image if needed.
         if scale_div != 1:
             new_w = int(region.size[0]*scale_div)
             new_h = int(region.size[1]*scale_div)
             region = region.resize((new_w, new_h), Image.ANTIALIAS)
 
+        # Save the image to a file.
         dirname, filename = os.path.split(f)
         fileImage = os.path.join(TEMP_FOLDER, dirname.split(
             os.path.sep)[-1] + '_' + filename + '.png')
         region.save(fileImage, "PNG")
         del region
         fileImages.append(fileImage)
+
     printOver('File processing complete.')
     print('')
     return fileImages
@@ -505,8 +521,9 @@ def gitHistory(target, revisions, info):
     forced_width = 0
     forced_height = 0
     for i in range(1, revisions):
-        print(('{i}/{revisions} {percent}%'.format(i=i,
-                                                   revisions=revisions, percent=int(100.0*i/revisions))))
+        print('{i}/{revisions} {percent}%'.format(i=i,
+                                                  revisions=revisions,
+                                                  percent=int(100.0*i/revisions)))
         if i == 1:
             first = True
         else:
