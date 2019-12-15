@@ -170,7 +170,8 @@ def filterFiles(root, name):
         return False
     if 'mock' in root or 'mock' in name:
         return False
-    if (name[-3:] == '.md' or name[-3:] == '.py' or name[-2:] == '.c') and 'network.c' not in name:
+    if ((name[-3:] == '.md' or name[-3:] == '.py' or name[-2:] == '.c')
+            and 'network.c' not in name):
         return True
     else:
         return False
@@ -200,8 +201,31 @@ def getAllFiles(targets, first):
     return allFiles, neededFiles
 
 
+def getAge(blame):
+    '''Return the normalized age of a line based on the blame info.'''
+    # Get the index after the year from the blame line. Good until 2100.
+    # TODO: This will break if there are filenames starting with 20.
+    i1 = blame.find(' 20') + 1
+    date = blame[i1:i1 + 1 + blame[i1+1:].find(' ')]
+    try:
+        diff = (
+            time.time()
+            - calendar.timegm(time.strptime(date, DATE_FORMAT))
+        )
+    except:
+        print("Bad date format.")
+        diff = NEWEST
+    if diff < NEWEST:
+        diff = NEWEST
+    elif diff > oldest:
+        diff = oldest
+    # newest commit is 255, oldest is 0
+    age = 255 - int(255*(diff-NEWEST)/(oldest-NEWEST))
+    return age
+
+
 def drawText(f, font, titleFont, titleHeight, charHeight):
-    '''Generate an image region in memory based on the text of the input file.'''
+    '''Generate an image in memory based on the text of the input file.'''
     source = processFile(f)
     if not source:
         return None
@@ -234,39 +258,24 @@ def drawText(f, font, titleFont, titleHeight, charHeight):
         if len(line.strip()) == 0 or len(blame.strip()) == 0:
             continue
         if y + 1 < len(source):
-            # Calculate age for each line.
-            if show_age:
-                # Whoa! This is about to break in 2020. LOL.
-                # Get the index after the year from the blame line.
-                i1 = blame.find(' 20') + 1
-                date = blame[i1:i1 + 1 + blame[i1+1:].find(' ')]
-                try:
-                    diff = (
-                        time.time()
-                        - calendar.timegm(time.strptime(date, DATE_FORMAT))
-                    )
-                except:
-                    print("Bad date format.")
-                    diff = NEWEST
-                if diff < NEWEST:
-                    diff = NEWEST
-                elif diff > oldest:
-                    diff = oldest
-                # newest commit is 255, oldest is 0
-                age = 255 - int(255*(diff-NEWEST)/(oldest-NEWEST))
-                # Dark blue. Newer commits are brighter.
-                # Older commits approach dark blue.
-                aged_color = (age, age, age, 255)
-
+            # Get the color from the last author of each line.
             author = blame[blame.find('<')+1:blame.find('>')]
+            # This will generate a new index each time a new author is passed.
             author_index = getAuthorIndex(author)
             author_index = author_index % len(colors)
             temp_color = colors[author_index]
-
+            # Calculate age for each line.
             if show_age:
+                age = getAge(blame)
+                # Dark blue. Newer commits are brighter.
+                # Older commits approach dark blue.
+                aged_color = (age, age, age, 255)
+                # Scale all the components of the color by the normalized age.
                 age_scale = age/255.  # Newest approach 1.
-                author_color = (int(temp_color[0]*age_scale), int(
-                    temp_color[1]*age_scale), int(temp_color[2]*age_scale), 255)
+                author_color = (
+                    int(temp_color[0]*age_scale),
+                    int(temp_color[1]*age_scale),
+                    int(temp_color[2]*age_scale), 255)
             else:
                 author_color = temp_color
 
@@ -275,11 +284,14 @@ def drawText(f, font, titleFont, titleHeight, charHeight):
             else:
                 line_color = author_color
 
+            # Draw the line of text with the calculated color.
             drawFile.text((HOFFSET, vOffset + charHeight*y),
                           line, line_color, font=font)
 
-    # The box is a 4-tuple defining the left, upper, right, and lower pixel coordinate.
-    # The Python Imaging Library uses a coordinate system with (0, 0) in the upper left corner.
+    # The box is a 4-tuple defining the left, upper, right,
+    # and lower pixel coordinate. The Python Imaging Library
+    # uses a coordinate system with (0, 0) in the upper left corner.
+    # Crop the image to the calculated limits.
     box = (0, 0, imgWidth, imgHeight)
     region = imgFile.crop(box)
     del imgFile
@@ -306,13 +318,11 @@ def drawImages(output_file_name, allFiles, scale_div=1):
     fileImages = []
     for _, f in enumerate(sorted(allFiles)):
         printOver(str(f))
-        
         # Generate the image in memory.
         region = drawText(f, font, titleFont, TITLE_HEIGHT, CHAR_HEIGHT)
         if not region:
             print("Error: No region.")
             continue
-        
         # Scale each image if needed.
         if scale_div != 1:
             new_w = int(region.size[0]*scale_div)
@@ -391,7 +401,8 @@ def centerText(target, working_file_name, extra=False):
             author_color = authors[author] % len(colors)
             line_colors.append(colors[author_color])
     overlaid = image_tools.overlayLines(
-        working_file_name, text, line_colors, OVERRIDE_FONT, OVERRIDE_X, OVERRIDE_Y, 2)
+        working_file_name, text, line_colors,
+        OVERRIDE_FONT, OVERRIDE_X, OVERRIDE_Y, 2)
     return overlaid
 
 
@@ -412,7 +423,8 @@ def limitHeight(fileImages):
     return fileImages
 
 
-def createImage(target, first=True, index=0, movie=False, info=True, forced_width=0, forced_height=0):
+def createImage(target, first=True, index=0, movie=False,
+                info=True, forced_width=0, forced_height=0):
     '''Generates a digital image based on the contents of the target folder.'''
     # Figure out the filenames based on the target name.
     base = git_info.getBaseRepoName(target)
@@ -521,9 +533,10 @@ def gitHistory(target, revisions, info):
     forced_width = 0
     forced_height = 0
     for i in range(1, revisions):
-        print('{i}/{revisions} {percent}%'.format(i=i,
-                                                  revisions=revisions,
-                                                  percent=int(100.0*i/revisions)))
+        print('{i}/{revisions} {percent}%'.format(
+            i=i,
+            revisions=revisions,
+            percent=int(100.0*i/revisions)))
         if i == 1:
             first = True
         else:
@@ -531,8 +544,10 @@ def gitHistory(target, revisions, info):
         movie = True
         center_text = info
 
-        file_name = createImage(target=target, first=first, index=i, movie=movie,
-                                info=center_text, forced_width=forced_width, forced_height=forced_height)
+        file_name = createImage(target=target, first=first, index=i,
+                                movie=movie, info=center_text,
+                                forced_width=forced_width,
+                                forced_height=forced_height)
         if first:
             img = Image.open(file_name)
             forced_width = img.size[0]
@@ -553,13 +568,19 @@ if __name__ == '__main__':
     parser.add_argument("--movie", help="Movie demo.", action="store_true")
     parser.add_argument("--revs", help="Number of revisions to use in movie.")
     parser.add_argument(
-        "--no_info", help="Exlude text overlay of git commit information.", action="store_true")
+        "--no_info",
+        help="Exlude text overlay of git commit information.",
+        action="store_true")
     parser.add_argument(
-        "--show_age", help="Color code lines according to commit age AND author.", action="store_true")
+        "--show_age",
+        help="Color code lines according to commit age AND author.",
+        action="store_true")
     parser.add_argument(
-        "--months", help="Number of months to scale the color coding of commits to.")
+        "--months",
+        help="Number of months to scale the color coding of commits to.")
     parser.add_argument(
-        "--age_only", help="Only color code the lines by age, not author.", action="store_true")
+        "--age_only", help="Only color code the lines by age, not author.",
+        action="store_true")
 
     args = parser.parse_args()
 
