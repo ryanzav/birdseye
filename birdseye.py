@@ -30,7 +30,12 @@ import disk_tools as disk
 import make_movie
 
 # Configuration
-
+PROCESS_ALL = False
+SKIP_GIT = False
+COLOR_SCHEME = 1
+BIG_CHAR = False
+NO_SCALE = False
+SAVE_TEMP = False
 NEWEST = 0              # Number of seconds old for a line to be colored fully bright.
 MONTHS = 6              # Default number of months to use to scale the coloring of lines.
 REGENERATE_ALL = True   # Regenerate all files and don't optimize by only updating files shown in diff.
@@ -51,8 +56,16 @@ HORIZONTAL_GAP = 200
 HOFFSET = 40
 ROW_OFFSET = 20
 TITLE_HEIGHT = 20
-CHAR_HEIGHT = 3
-CHAR_WIDTH = 1
+BIG_CHAR_HEIGHT = 18
+BIG_CHAR_WIDTH = 6
+LIL_CHAR_HEIGHT = 3
+LIL_CHAR_WIDTH = 1
+if BIG_CHAR:
+    CHAR_HEIGHT = BIG_CHAR_HEIGHT
+    CHAR_WIDTH = BIG_CHAR_WIDTH
+else:
+    CHAR_HEIGHT = LIL_CHAR_HEIGHT
+    CHAR_WIDTH = LIL_CHAR_WIDTH
 MAX_CHARS = 96
 MAX_WIDTH = MAX_CHARS * CHAR_WIDTH + HORIZONTAL_GAP
 MAX_HEIGHT = MAX_LINES * CHAR_HEIGHT
@@ -72,8 +85,7 @@ black = (0, 0, 0, 255)
 white = (255, 255, 255, 255)
 darkblue = (0, 0, 40, 255)
 transparent = (0, 0, 0, 0)
-background = darkblue
-colors = [
+colors1 = [
         (230, 25, 75, 255),     # red
         (60, 180, 75, 255),     # green
         (255, 225, 25, 255),    # yellow
@@ -94,6 +106,25 @@ colors = [
         (255, 215, 180, 255),   # coral
         (0, 0, 128, 255)       # navy
         ]
+
+colors2 = [
+        (60, 180, 75, 50),     # green
+        (0, 130, 200, 50),     # blue
+        (230, 190, 255, 50),   # lavender
+        (170, 255, 195, 50),   # mint
+        (128, 128, 0, 50),     # olive
+        (255, 215, 180, 50),   # coral
+        (0, 0, 128, 50),       # navy
+        ]
+
+if COLOR_SCHEME == 1:
+	background = darkblue
+	info_color = white
+	colors = colors1
+else:
+	background = black
+	info_color = greenish
+	colors = colors2
 
 # Variables
 
@@ -160,13 +191,19 @@ def getAllFiles(targets, first):
     return allFiles,neededFiles
 
 def drawText(f,font,titleFont,titleHeight,charHeight):
-    blames = git_info.getBlame(f)
-    if not blames:
-        return None
-
     source = processFile(f)
     if not source:
         return None
+    
+    if SKIP_GIT:
+        blames = len(source)*["a"]
+    else:
+        blames = git_info.getBlame(f)
+        if not blames:
+            if PROCESS_ALL:
+                blames = len(source)*["a"]
+            else:
+                return None
 
     imgHeight = titleHeight*3 + (5 +len(source))*charHeight #Override
     imgWidth = MAX_WIDTH
@@ -247,9 +284,10 @@ def drawImages(output_file_name, allFiles, scale_div=1):
             print("Error: No region.")
             continue
 
-        new_w = int(region.size[0]*scale_div)
-        new_h = int(region.size[1]*scale_div)
-        region = region.resize((new_w,new_h), Image.ANTIALIAS)
+        if scale_div != 1:
+	        new_w = int(region.size[0]*scale_div)
+	        new_h = int(region.size[1]*scale_div)
+	        region = region.resize((new_w,new_h), Image.ANTIALIAS)
 
         dirname, filename = os.path.split(f)
         fileImage = os.path.join(TEMP_FOLDER, dirname.split(os.path.sep)[-1] + '_' + filename + '.png')
@@ -304,12 +342,12 @@ def centerText(target, working_file_name, extra = False):
     text = []
     line_colors = []
     text.append(git_info.getBaseRepoName(target))
-    line_colors.append(white)
+    line_colors.append(info_color)
     text.append(git_info.getLastCommitDate(target))
-    line_colors.append(white)
+    line_colors.append(info_color)
     if extra:
         text.append("File count: " + git_info.getFileCount(target))
-        line_colors.append(white)
+        line_colors.append(info_color)
         for author in sorted( authors):
             text.append(author + ' ' + str(author_lines[author]))
             author_color = authors[author] % len(colors)
@@ -344,6 +382,8 @@ def createImage(target,first=True,index=0,movie=False, info = True, alphabetical
         scale_div = 1 - len(allFiles)/1000.0
         if scale_div < .1:
             scale_div = .1
+        if NO_SCALE:
+        	scale_div = 1
         print(('Scale = ' + str(scale_div)))
 
     allFileImages = []
@@ -529,7 +569,9 @@ if __name__ == '__main__':
     msg += '                                                      ><> \n'
     print(msg)
 
-    disk.deleteFolder(TEMP_FOLDER)
+    if not SAVE_TEMP:
+    	disk.deleteFolder(TEMP_FOLDER)
+    
     if movie:
         branch = ''
         try:
@@ -545,5 +587,3 @@ if __name__ == '__main__':
         output_file_name = createImage(target=target,info=info)
         if OPEN_AFTER:
             disk.open(output_file_name)
-
-    disk.deleteFolder(TEMP_FOLDER)
