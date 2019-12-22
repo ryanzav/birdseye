@@ -57,6 +57,8 @@ def scale(target,factor):
     new_height = int(factor*height)
     img = imgFile.resize((new_width,new_height), Image.ANTIALIAS)
     img.save(target,"PNG")
+    imgFile.close()
+    img.close()
     return target
 
 
@@ -87,6 +89,7 @@ def separate(target,pieces=0):
 
         upper_left_y += new_height
         lower_right_y += new_height
+    imgFile.close()
     return filenames
 
 def make_even(target):      
@@ -104,129 +107,87 @@ def make_even(target):
     sub_box = (upper_left_x,upper_left_y,lower_right_x,lower_right_y)
     region = imgFile.crop(sub_box)
     region.save(target, "PNG")
+    imgFile.close()
     return target
 
-def split(target,pieces=0):      
-    imgFile = Image.open(target)
-    width, height = imgFile.size
-
-    if pieces == 0:
-        for i in range(1,100):
-            if i*height*width_fraction/height_fraction > width/i:
-                break
-        pieces = i + i%2
-        
-    new_width = round(width/pieces)
-
-    upper_left_x = 0
-    upper_left_y = 0
-    lower_right_x = new_width
-    lower_right_y = height
-
-    filenames = []
-    for i in range(pieces):
-        sub_box = (upper_left_x,upper_left_y,lower_right_x,lower_right_y)
-        region = imgFile.crop(sub_box)
-        filename = target[:-4]+ '_split_%04d' % i  + str(i) + '.png'
-        region.save(filename, "PNG")
-        filenames.append(filename)
-
-        upper_left_x += new_width
-        lower_right_x += new_width
-    return filenames
-    
-def stack(targets):
-    images = []
-    for target in targets:
-        images.append( Image.open(target) )
-
-    width, height = images[0].size
-    total_height = len(targets)*height
-    combined = Image.new("RGBA", (width, total_height))#,background)
-    for i, image in enumerate(images):
-        box = (0,i*height,width,(i+1)*height)
-        combined.paste(image, box)
-    filename = targets[0][:-4]+ '_stacked.png'
-    combined.save(filename, "PNG")
-    return filename
-
 def pile(targets):
-    images = []
-    for target in targets:
-        if target != '':
-            images.append( Image.open(target) )
-    
+    image = None
     max_width = 0
     total_height = 0
-    for image in images:
-        width,height = image.size
-        if width > max_width:
-            max_width = width    
-        total_height += height
+    for target in targets:
+        if target != '':
+            image = Image.open(target)
+            width,height = image.size
+            image.close()
+            if width > max_width:
+                max_width = width    
+            total_height += height
             
     total_width = max_width
     piled = Image.new("RGBA", (total_width, total_height))
     x_offset = 0
-    for i, image in enumerate(images):
-        width,height = image.size
-        box = (0,x_offset,width,x_offset + height)
-        piled.paste(image, box)
-        x_offset += height
+    for target in targets:
+        if target != '':
+            image = Image.open(target)
+            width,height = image.size
+            box = (0,x_offset,width,x_offset + height)
+            piled.paste(image, box)
+            image.close()
+            x_offset += height
     filename = targets[0][:-4]+ '_piled.png'
     piled.save(filename, "PNG")
     return filename
 
 def couple(targets):
-    images = []
-    for target in targets:
-        images.append( Image.open(target) )
-    
     total_width = 0
-    for image in images:
+    for target in targets:
+        image = Image.open(target)
         width,height = image.size
         total_width += width
+        image.close()
     total_height = height    
     combined = Image.new("RGBA", (total_width, total_height),background)
-    for i, image in enumerate(images):
+    for i, target in enumerate(targets):
+        image = Image.open(target)
         width,height = image.size
         box = (i*width,0,(i+1)*width,height)
         combined.paste(image, box)
+        image.close()
     filename = targets[0][:-4]+ '_coupled.png'
     combined.save(filename, "PNG")
+    combined.close()
     return filename
 
 def connect(targets):
-    images = []
-    for target in targets:
-        images.append( Image.open(target) )
-    
     max_width = 0
     max_height = 0
-    for image in images:
+    for target in targets:
+        image = Image.open(target)
         width,height = image.size
         if width > max_width:
             max_width = width
         if height > max_height:
             max_height = height
+        image.close()
             
     total_width = len(targets)*max_width
     total_height = max_height
     combined = Image.new("RGBA", (total_width, total_height),background)
-    for i, image in enumerate(images):
+    for i, target in enumerate(targets):
+        image = Image.open(target)
         width,height = image.size
         box = (i*width,0,(i+1)*width,height)
         combined.paste(image, box)
+        image.close()
     filename = targets[0][:-4]+ '_connected.png'
     combined.save(filename, "PNG")
+    combined.close()
     return filename
 
-def enhance(targets):
-    images = []
-    for target in targets:
-        images.append( Image.open(target) )
-    
+def enhance(targets):   
     enhanced = []
-    for i, image in enumerate(images):
+    for i, target in enumerate(targets):
+        image = Image.open(target)
         enhancer = (ImageEnhance.Color(image))
         image = enhancer.enhance(1.6)
         enhancer = (ImageEnhance.Brightness(image))
@@ -234,13 +195,8 @@ def enhance(targets):
         filename = target[:-4]+ '_enhance_%04d' % i  + str(i) + '.png'
         image.save(filename, "PNG")
         enhanced.append(filename)
+        image.close()
     return enhanced
-
-def split_then_stack(target,pieces=0):
-    files = split(target,pieces)
-    stacked = stack(files)
-    disk.cleanUp(files)
-    return stacked
 
 def getCentered(whole,insert_size):
     remainder = whole - insert_size
@@ -255,14 +211,13 @@ def getLongest(lines):
 
 def overlay(target,text,color,x,y,font_height=40):      
     img = Image.open(target)
-    width, height = img.size
-
     bigHeight = font_height
     bigFont = ImageFont.truetype("Courier Prime Code.ttf", int(bigHeight))
     drawFile = ImageDraw.Draw(img)
     drawFile.text((x, y),text,color,font=bigFont) # 1/10 from upper left corner
     output_file_name = target[:-4] + '_overlay.png'
     img.save(output_file_name, "PNG")
+    img.close()
     return output_file_name
 
 def overlayLines(target,lines,line_colors,font_height=None,x=None,y=None, fraction=3):      
@@ -307,6 +262,7 @@ def overlayLines(target,lines,line_colors,font_height=None,x=None,y=None, fracti
         offset += LINE_OFFSET
     output_file_name = target[:-4] + '_overlay_lines.png'
     img.save(output_file_name, "PNG")
+    img.close()
     return output_file_name    
 
 def blur(image,x1,y1,x2,y2):
@@ -321,16 +277,12 @@ def blur(image,x1,y1,x2,y2):
 
 if __name__ == '__main__':
     target = "example.png"
-
-    scale(target,.5)
-    exit()
     results = separate(target)
     for result in results:
         disk.open(result)
     time.sleep(WAIT_TIME)
     disk.cleanUp(results)
 
-    #target = disk.copy(target,"output.png")
     text = []
     line_colors = []
     text.append('Line 1')
@@ -349,15 +301,22 @@ if __name__ == '__main__':
     time.sleep(WAIT_TIME)
     disk.cleanUp(output_file_name_2)
 
-    stacked = split_then_stack(target,3)
-    disk.open(stacked)    
-    time.sleep(WAIT_TIME)
-    disk.cleanUp(stacked)
-
     enhanced = enhance([target])
     for image in enhanced:
         disk.open(image)    
+        
+    coupled = couple([target,enhanced[0]])
+    disk.open(coupled)    
+
+    piled = pile([target,enhanced[0]])
+    disk.open(piled)   
+
+    connected = connect([target,enhanced[0]])
+    disk.open(connected)   
+    
     time.sleep(WAIT_TIME)
     disk.cleanUp(enhanced)
-
+    disk.cleanUp(coupled)
+    disk.cleanUp(piled)
+    disk.cleanUp(connected)
     

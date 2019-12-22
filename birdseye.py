@@ -48,8 +48,8 @@ DEFAULT_REVS = 5        # The default number of commits to include in a movie.
 TOTAL_HEIGHT = 5000
 FORCE_WIDTH = True
 FORCE_EVEN = True
-MAX_FILES = 100000
-MAX_LINES = 100000
+MAX_FILES = 1000
+MAX_LINES = 10000
 HEIGHT_LIMIT = 4000     # Max file height before file is split.
 CORNER_TEXT = False
 CENTER_TEXT = False
@@ -229,6 +229,8 @@ def drawText(f, font, titleFont, titleHeight, charHeight):
     source = processFile(f)
     if not source:
         return None
+    # Limit to maximimum number of lines.
+    source = source[:MAX_LINES]
 
     if SKIP_GIT:
         blames = len(source)*["a"]
@@ -253,7 +255,7 @@ def drawText(f, font, titleFont, titleHeight, charHeight):
     vOffset += titleHeight * 2
 
     # Draw each line.
-    for y, srcs in enumerate(zip(source[:MAX_LINES], blames)):
+    for y, srcs in enumerate(zip(source, blames)):
         line, blame = srcs
         if len(line.strip()) == 0 or len(blame.strip()) == 0:
             continue
@@ -294,6 +296,7 @@ def drawText(f, font, titleFont, titleHeight, charHeight):
     # Crop the image to the calculated limits.
     box = (0, 0, imgWidth, imgHeight)
     region = imgFile.crop(box)
+    imgFile.close()
     del imgFile
     del drawFile
     return region
@@ -303,8 +306,9 @@ def printOver(msg):
     spaces = TERMINAL_WIDTH - len(msg)
     if spaces < 0:
         spaces = 0
+        msg = msg[-TERMINAL_WIDTH:]
     msg = "\r{}{}".format(str(msg), ' '*spaces)
-    msg = msg[:TERMINAL_WIDTH]
+
     sys.stdout.write(msg)
     sys.stdout.flush()
 
@@ -321,7 +325,6 @@ def drawImages(output_file_name, allFiles, scale_div=1):
         # Generate the image in memory.
         region = drawText(f, font, titleFont, TITLE_HEIGHT, CHAR_HEIGHT)
         if not region:
-            print("Error: No region.")
             continue
         # Scale each image if needed.
         if scale_div != 1:
@@ -357,7 +360,7 @@ def processFile(filename):
         print("Failed to open file!")
         return None
     except UnicodeDecodeError:
-        print("Failed to decode file as UTF-8! Trying something else!")
+        printOver("Failed to decode file as UTF-8! Trying something else!")
         try:
             f = open(filename, 'r', encoding='utf_16_le')
             data = f.read()
@@ -419,6 +422,7 @@ def limitHeight(fileImages):
             fileImages = results + fileImages
             added += results
             disk.cleanUp(image)
+        whole.close()
         del whole
     return fileImages
 
@@ -502,7 +506,8 @@ def createImage(target, first=True, index=0, movie=False,
                 'blank.png', img.size[0], forced_height-img.size[1])
             connected = image_tools.pile([connected, blank])
             disk.cleanUp('blank.png')
-
+        img.close()
+        del img
     # Fix the color and brightness.
     enhanced = image_tools.enhance([connected])
     disk.cleanUp(connected)
@@ -552,6 +557,8 @@ def gitHistory(target, revisions, info):
             img = Image.open(file_name)
             forced_width = img.size[0]
             forced_height = img.size[1]
+            img.close()
+            del img
 
         resetAuthors()
         response = git_info.checkoutRevision(target, 1)
