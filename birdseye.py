@@ -396,7 +396,7 @@ def cornerText(target, working_file_name):
         working_file_name, text, line_colors, 40, x, y)
     return overlaid
 
-
+MAX_MSG_LENGTH = 80
 def centerText(target, working_file_name, extra=False):
     text = []
     line_colors = []
@@ -407,8 +407,10 @@ def centerText(target, working_file_name, extra=False):
     if SHOW_COMMIT_INFO:
         lines = git_info.getLastCommit(target).split('\n')
         for line in lines:
-            text.append(line)
-            line_colors.append(info_color)
+            while len(line) > 0:
+                text.append(line[:MAX_MSG_LENGTH])
+                line = line[MAX_MSG_LENGTH:]
+                line_colors.append(info_color)
     if extra:
         text.append("File count: " + git_info.getFileCount(target))
         line_colors.append(info_color)
