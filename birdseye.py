@@ -30,6 +30,7 @@ import disk_tools as disk
 import make_movie
 
 # Configuration
+SHOW_COMMIT_INFO = False
 PROCESS_ALL = False
 SKIP_GIT = False
 COLOR_SCHEME = 1
@@ -54,7 +55,7 @@ HEIGHT_LIMIT = 4000     # Max file height before file is split.
 CORNER_TEXT = False
 CENTER_TEXT = False
 OVERRIDE_FONT = None
-OVERRIDE_X = None
+OVERRIDE_X = None   
 OVERRIDE_Y = None
 HORIZONTAL_GAP = 200
 HOFFSET = 40
@@ -232,6 +233,9 @@ def drawText(f, font, titleFont, titleHeight, charHeight):
     # Limit to maximimum number of lines.
     source = source[:MAX_LINES]
 
+    if SHOW_COMMIT_INFO:
+        commitInfo = git_info.getCommitNumber(os.path.split(f)[0])
+
     if SKIP_GIT:
         blames = len(source)*["a"]
     else:
@@ -280,6 +284,10 @@ def drawText(f, font, titleFont, titleHeight, charHeight):
                     int(temp_color[2]*age_scale), 255)
             else:
                 author_color = temp_color
+                if SHOW_COMMIT_INFO:
+                    if (blame[:7] == commitInfo):
+                        author_color = white
+     
 
             if age_only:
                 line_color = aged_color
@@ -396,6 +404,11 @@ def centerText(target, working_file_name, extra=False):
     line_colors.append(info_color)
     text.append(git_info.getLastCommitDate(target))
     line_colors.append(info_color)
+    if SHOW_COMMIT_INFO:
+        lines = git_info.getLastCommit(target).split('\n')
+        for line in lines:
+            text.append(line)
+            line_colors.append(info_color)
     if extra:
         text.append("File count: " + git_info.getFileCount(target))
         line_colors.append(info_color)
@@ -403,6 +416,7 @@ def centerText(target, working_file_name, extra=False):
             text.append(author + ' ' + str(author_lines[author]))
             author_color = authors[author] % len(colors)
             line_colors.append(colors[author_color])
+
     overlaid = image_tools.overlayLines(
         working_file_name, text, line_colors,
         OVERRIDE_FONT, OVERRIDE_X, OVERRIDE_Y, 2)
