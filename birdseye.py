@@ -163,19 +163,26 @@ def getAuthorIndex(author):
 
 
 def filterFiles(root, name):
-    if 'mirror' in root:
+    # Expanded list of common binary file extensions
+    binary_extensions = [
+        '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', 
+        '.zip', '.exe', '.bin', '.dll', '.pdf', '.doc', 
+        '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.rar', 
+        '.7z', '.iso', '.tar', '.gz', '.bz2', '.swf', 
+        '.class', '.apk', '.dmg', '.mp3', '.wav', '.mp4', 
+        '.avi', '.mov', '.mkv', '.flv', '.webm'
+    ]
+    
+    # Return False for files without an extension (no '.' in the basename).
+    if os.path.splitext(name)[1] == '':
         return False
-    if 'TraceRecorder' in root:
+    # Ignore any files inside a .git directory.
+    if '.git' in root.split(os.path.sep):
         return False
-    if 'mbedtls' in root:
+    # Ignore common binary files
+    if os.path.splitext(name)[1].lower() in binary_extensions:
         return False
-    if 'mock' in root or 'mock' in name:
-        return False
-    if ((name[-3:] == '.md' or name[-3:] == '.py' or name[-2:] == '.c')
-            and 'network.c' not in name):
-        return True
-    else:
-        return False
+    return True
 
 
 def getAllFiles(targets, first):
@@ -365,10 +372,10 @@ def processFile(filename):
         data = f.read()
         f.close()
     except IOError:
-        print("Failed to open file!")
+        print("Failed to open file " + filename)
         return None
     except UnicodeDecodeError:
-        printOver("Failed to decode file as UTF-8! Trying something else!")
+        print(f'Failed to decode {filename} as UTF-8! Trying something else!')
         try:
             f = open(filename, 'r', encoding='utf_16_le')
             data = f.read()
