@@ -170,7 +170,8 @@ def filterFiles(root, name):
         '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.rar', 
         '.7z', '.iso', '.tar', '.gz', '.bz2', '.swf', 
         '.class', '.apk', '.dmg', '.mp3', '.wav', '.mp4', 
-        '.avi', '.mov', '.mkv', '.flv', '.webm'
+        '.avi', '.mov', '.mkv', '.flv', '.webm', '.jar',
+        '.icns'
     ]
     
     # Return False for files without an extension (no '.' in the basename).
