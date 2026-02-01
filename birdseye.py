@@ -84,11 +84,13 @@ SOURCE_FOLDER = '.'
 TEMP_FOLDER = os.path.join('.', 'temp')
 OUTPUT_FOLDER = os.path.join('.', 'output')
 
-greenish = (32, 200, 170, 255)
+paleblue = (128, 153, 230, 255)
+greenish = (62, 230, 200, 255)
 bluish = (77, 77, 255, 255)
 black = (0, 0, 0, 255)
 white = (255, 255, 255, 255)
-darkblue = (0, 0, 40, 255)
+darkblue = (3, 3, 90, 255)
+lightblue = (100, 100, 120, 255)
 transparent = (0, 0, 0, 0)
 colors1 = [
     (230, 25, 75, 255),     # red
@@ -112,6 +114,8 @@ colors1 = [
     (0, 0, 128, 255)       # navy
 ]
 
+
+
 colors2 = [
     (60, 180, 75, 50),     # green
     (0, 130, 200, 50),     # blue
@@ -125,11 +129,19 @@ colors2 = [
 if COLOR_SCHEME == 1:
     background = darkblue
     info_color = white
+    filename_color = greenish
     colors = colors1
-else:
+elif COLOR_SCHEME == 2:
     background = black
     info_color = greenish
+    filename_color = white
     colors = colors2
+else:
+    background = lightblue
+    info_color = white
+    filename_color = white
+    colors = colors1
+
 
 # Variables
 
@@ -171,7 +183,7 @@ def filterFiles(root, name):
         '.7z', '.iso', '.tar', '.gz', '.bz2', '.swf', 
         '.class', '.apk', '.dmg', '.mp3', '.wav', '.mp4', 
         '.avi', '.mov', '.mkv', '.flv', '.webm', '.jar',
-        '.icns'
+        '.icns', '.pyc', '.ttf'
     ]
     
     # Return False for files without an extension (no '.' in the basename).
@@ -257,13 +269,13 @@ def drawText(f, font, titleFont, titleHeight, charHeight):
     imgHeight = titleHeight*3 + (5 + len(source))*charHeight
     imgWidth = MAX_WIDTH
 
-    imgFile = Image.new("RGBA", (imgWidth, imgHeight), background)
+    imgFile = Image.new("RGBA", (imgWidth, imgHeight), transparent)
     drawFile = ImageDraw.Draw(imgFile)
 
     # Draw the filename.
     name = str(os.path.split(f)[1])
     vOffset = titleHeight
-    drawFile.text((HOFFSET, vOffset), name, greenish, font=titleFont)
+    drawFile.text((HOFFSET, vOffset), name, filename_color, font=titleFont)
     vOffset += titleHeight * 2
 
     # Draw each line.
@@ -328,7 +340,6 @@ def printOver(msg):
     sys.stdout.write(msg)
     sys.stdout.flush()
 
-
 def drawImages(output_file_name, allFiles, scale_div=1):
     '''Generate an image for each target file.'''
     font = ImageFont.truetype("Courier Prime Code.ttf", CHAR_HEIGHT)
@@ -347,6 +358,11 @@ def drawImages(output_file_name, allFiles, scale_div=1):
             new_w = int(region.size[0]*scale_div)
             new_h = int(region.size[1]*scale_div)
             region = region.resize((new_w, new_h), Image.Resampling.LANCZOS)
+        # Binary alpha
+        r, g, b, a = region.split()
+        # a = a.point(lambda p: 255 if p > 200 else p+55)
+        a = a.point(lambda p: min(p*4,255))
+        region = Image.merge('RGBA', (r, g, b, a))
 
         # Save the image to a file.
         dirname, filename = os.path.split(f)
@@ -362,7 +378,7 @@ def drawImages(output_file_name, allFiles, scale_div=1):
 
 
 def drawBlank(output_file_name, imgWidth, imgHeight):
-    imgFile = Image.new("RGBA", (imgWidth, imgHeight), background)
+    imgFile = Image.new("RGBA", (imgWidth, imgHeight), transparent)
     imgFile.save(output_file_name, 'PNG')
     return output_file_name
 
@@ -532,16 +548,13 @@ def createImage(target, first=True, index=0, movie=False,
             disk.cleanUp('blank.png')
         img.close()
         del img
-    # Fix the color and brightness.
-    enhanced = image_tools.enhance([connected])
-    disk.cleanUp(connected)
 
     # Apply text overlay in the corner.
     if CORNER_TEXT:
-        overlaid = cornerText(target, enhanced[0])
-        disk.cleanUp(enhanced)
+        overlaid = cornerText(target, connected)
+        disk.cleanUp(connected)
     else:
-        overlaid = enhanced[0]
+        overlaid = connected
 
     # Apply text overlay in the center.
     if info:
@@ -549,6 +562,9 @@ def createImage(target, first=True, index=0, movie=False,
         disk.cleanUp(overlaid)
     else:
         overlaid2 = overlaid
+
+    # Fill background under the image with the selected background color
+    overlaid2 = image_tools.composite_over(overlaid2, background)
 
     disk.move(overlaid2, output_file_name)
     return output_file_name

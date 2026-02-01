@@ -22,45 +22,32 @@ import disk_tools as disk
 WAIT_TIME = 1
 
 colors = [
-        (230,25,75,255), # red
-        (60,180,75,255), # green
-        (255,225,25,255), # yellow
-        (0,130,200,255), # blue
-        (245,130,48,255), #orange
-        (145,30,180,255), # purple
-        (70,240,240,255), # cyan
-        (240,50,230,255), # magenta
-        (210,245,60,255), # lime
-        (250,190,190,255), # pink
-        (0,128,128,255), # teal
-        (230,190,255,255), # lavender
-        (170,110,40,255), # brown
-        (255,250,200,255), # beige
-        (128,0,0,255), # maroon
-        (170,255,195,255), # mint
-        (128,128,0,255), # olive
-        (255,215,180,255), # coral
-        (0,0,128,255) #navy
-        ]
+    (230, 25, 75, 255),     # red
+    (60, 180, 75, 255),     # green
+    (255, 225, 25, 255),    # yellow
+    (0, 130, 200, 255),     # blue
+    (245, 130, 48, 255),    # orange
+    (145, 30, 180, 255),    # purple
+    (70, 240, 240, 255),    # cyan
+    (240, 50, 230, 255),    # magenta
+    (210, 245, 60, 255),    # lime
+    (250, 190, 190, 255),   # pink
+    (0, 128, 128, 255),     # teal
+    (230, 190, 255, 255),   # lavender
+    (170, 110, 40, 255),    # brown
+    (255, 250, 200, 255),   # beige
+    (128, 0, 0, 255),       # maroon
+    (170, 255, 195, 255),   # mint
+    (128, 128, 0, 255),     # olive
+    (255, 215, 180, 255),   # coral
+    (0, 0, 128, 255)       # navy
+]
 
-darkblue = (0,0,40,255)
+darkblue = (3, 3, 90, 255)
 transparent = (0,0,0,0)
-background = darkblue
 
 width_fraction = 16
 height_fraction = 9
-
-def scale(target,factor):
-    imgFile = Image.open(target)
-    width, height = imgFile.size
-    new_width = int(factor*width)
-    new_height = int(factor*height)
-    img = imgFile.resize((new_width,new_height), Image.ANTIALIAS)
-    img.save(target,"PNG")
-    imgFile.close()
-    img.close()
-    return target
-
 
 def separate(target,pieces=0):      
     imgFile = Image.open(target)
@@ -124,7 +111,7 @@ def pile(targets):
             total_height += height
             
     total_width = max_width
-    piled = Image.new("RGBA", (total_width, total_height))
+    piled = Image.new("RGBA", (total_width, total_height), transparent)
     x_offset = 0
     for target in targets:
         if target != '':
@@ -146,7 +133,7 @@ def couple(targets):
         total_width += width
         image.close()
     total_height = height    
-    combined = Image.new("RGBA", (total_width, total_height),background)
+    combined = Image.new("RGBA", (total_width, total_height), transparent)
     for i, target in enumerate(targets):
         image = Image.open(target)
         width,height = image.size
@@ -172,7 +159,7 @@ def connect(targets):
             
     total_width = len(targets)*max_width
     total_height = max_height
-    combined = Image.new("RGBA", (total_width, total_height),background)
+    combined = Image.new("RGBA", (total_width, total_height),transparent)
     for i, target in enumerate(targets):
         image = Image.open(target)
         width,height = image.size
@@ -189,9 +176,9 @@ def enhance(targets):
     for i, target in enumerate(targets):
         image = Image.open(target)
         enhancer = (ImageEnhance.Color(image))
-        image = enhancer.enhance(1.6)
+        image = enhancer.enhance(1.1)
         enhancer = (ImageEnhance.Brightness(image))
-        image = enhancer.enhance(2)    
+        image = enhancer.enhance(.8)    
         filename = target[:-4]+ '_enhance_%04d' % i  + str(i) + '.png'
         image.save(filename, "PNG")
         enhanced.append(filename)
@@ -269,11 +256,27 @@ def blur(image,x1,y1,x2,y2):
     box = (int(x1), int(y1), int(x2), int(y2))
     region = image.crop(box)
     region = region.filter(ImageFilter.BLUR)
-
-    enhancer = ImageEnhance.Brightness(region)
-    region = enhancer.enhance(.5)
+    region = region.filter(ImageFilter.BLUR)
+    region = region.filter(ImageFilter.BLUR)
+    region = region.filter(ImageFilter.BLUR)
     image.paste(region, box)
     return image
+
+def composite_over(path, bg_color):
+    """Composite the image over bg_color so transparent background is filled."""
+    img = Image.open(path).convert('RGBA')
+    # Normalize bg_color to RGBA
+    if len(bg_color) == 3:
+        bg = (bg_color[0], bg_color[1], bg_color[2], 255)
+    else:
+        bg = (bg_color[0], bg_color[1], bg_color[2], bg_color[3])
+    bg_img = Image.new('RGBA', img.size, bg)
+    composed = Image.alpha_composite(bg_img, img)
+    composed.save(path, "PNG")
+    img.close()
+    bg_img.close()
+    composed.close()
+    return path
 
 if __name__ == '__main__':
     target = "example.png"
@@ -319,4 +322,4 @@ if __name__ == '__main__':
     disk.cleanUp(coupled)
     disk.cleanUp(piled)
     disk.cleanUp(connected)
-    
+
