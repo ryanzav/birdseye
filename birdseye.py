@@ -338,7 +338,7 @@ def drawImages(output_file_name, allFiles, scale_div=1):
         if scale_div != 1:
             new_w = int(region.size[0]*scale_div)
             new_h = int(region.size[1]*scale_div)
-            region = region.resize((new_w, new_h), Image.ANTIALIAS)
+            region = region.resize((new_w, new_h), Image.Resampling.LANCZOS)
 
         # Save the image to a file.
         dirname, filename = os.path.split(f)
