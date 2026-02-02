@@ -6,7 +6,7 @@ Create a bird's eye view of a project's source code.
 
 ![alt text][example]
 
-This does a git-blame on each line of a project's source code and then generates a color coded image of the source text for the entire project.
+This script does a git-blame on each line of a project's source code and then generates a color coded image of the source text for the entire project.
 
 ### Usage
 
