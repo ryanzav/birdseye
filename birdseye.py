@@ -573,11 +573,11 @@ def gitHistory(target, revisions, info):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(add_help=True)
     parser.add_argument("--target", help="Target folder path.")
-    parser.add_argument("--movie", help="Movie demo.", action="store_true")
+    parser.add_argument("--movie", help="Generate a video of the repo changes over time.", action="store_true")
     parser.add_argument("--revs", help="Number of revisions to use in movie.")
     parser.add_argument(
         "--no_info",
-        help="Exlude text overlay of git commit information.",
+        help="Exclude text overlay of git commit information.",
         action="store_true")
     parser.add_argument(
         "--show_age",
@@ -616,6 +616,7 @@ if __name__ == '__main__':
 
     if args.age_only:
         age_only = True
+        show_age = True
     else:
         age_only = False
 
