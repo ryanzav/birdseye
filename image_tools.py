@@ -255,10 +255,8 @@ def overlayLines(target,lines,line_colors,font_height=None,x=None,y=None, fracti
 def blur(image,x1,y1,x2,y2):
     box = (int(x1), int(y1), int(x2), int(y2))
     region = image.crop(box)
-    region = region.filter(ImageFilter.BLUR)
-    region = region.filter(ImageFilter.BLUR)
-    region = region.filter(ImageFilter.BLUR)
-    region = region.filter(ImageFilter.BLUR)
+    for i in range(1,40):
+        region = region.filter(ImageFilter.BLUR)
     image.paste(region, box)
     return image
 

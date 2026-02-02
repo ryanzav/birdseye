@@ -8,55 +8,37 @@ A movie can be generated with ffmpeg that shows the evolution of a repo.
 
 This requires 'pillow' which is a fork of the Python Image Library (PIL).
 """
-
-from PIL import Image
-from PIL import ImageFont
-from PIL import ImageDraw
-from PIL import ImageEnhance
-from PIL.FontFile import WIDTH
-
-import os
-import time
-import calendar
-import sys
-import argparse
-import math
-import os.path
+import os, os.path, time, calendar, sys, argparse
 from io import open
-
-import git_info
-import image_tools
+from PIL import Image, ImageFont, ImageDraw
+import git_info, image_tools, make_movie
 import disk_tools as disk
-import make_movie
 
 # Configuration
-SHOW_COMMIT_INFO = False
-PROCESS_ALL = False
-SKIP_GIT = False
-COLOR_SCHEME = 1
-BIG_CHAR = False
-NO_SCALE = False
-SAVE_TEMP = False
-# Number of seconds old for a line to be colored fully bright.
-NEWEST = 0
-# Default number of months to use to scale the coloring of lines.
-MONTHS = 6
-# Regenerate all files and don't optimize by only updating files shown in diff.
-REGENERATE_ALL = True
-# Open the resulting image or movie with a local application.
-OPEN_AFTER = True
-DEFAULT_REVS = 5        # The default number of commits to include in a movie.
-TOTAL_HEIGHT = 5000
-FORCE_WIDTH = True
-FORCE_EVEN = True
-MAX_FILES = 1000
-MAX_LINES = 10000
-HEIGHT_LIMIT = 4000     # Max file height before file is split.
-CORNER_TEXT = False
-CENTER_TEXT = False
-OVERRIDE_FONT = None
-OVERRIDE_X = None   
-OVERRIDE_Y = None
+OPEN_AFTER = True           # Open the resulting image or movie with a local application.
+MAX_FILES = 100             # Maximum number of files to process.
+MAX_LINES = 10000           # Maximum lines in any file to process.
+TERMINAL_WIDTH = 80         # The maximum width of any line.
+MAX_MSG_LENGTH = 80         # The maximum git commit info message length.
+SHOW_COMMIT_INFO = False    # Display the commit details in the info block.
+PROCESS_ALL = False         # Include files without a git history.
+SKIP_GIT = False            # Just show the files without any git details.
+COLOR_SCHEME = 1            # Color scheme selection.
+BIG_CHAR = False            # Use a larger character size.
+NO_SCALE = False            # Don't scale the images based on the total number of files.
+SAVE_TEMP = False           # Save previous output in temp folder.
+NEWEST = 0                  # Number of seconds old for a line to be colored fully bright.
+MONTHS = 6                  # Default number of months to use to scale the coloring of lines.
+REGENERATE_ALL = True       # Regenerate all files and don't optimize by only updating files shown in diff.
+DEFAULT_REVS = 5            # The default number of commits to include in a movie.
+FORCE_SIZE = True           # Force all the movie frames to be the same size.
+FORCE_EVEN = True           # Force the height and width to be even numbers.
+HEIGHT_LIMIT = 4000         # Max file height before file is split.
+CORNER_TEXT = False         # Put info in the corner instead of the center.
+OVERRIDE_FONT = None        # Force an info font size.
+OVERRIDE_X = None           # Force info location.
+OVERRIDE_Y = None           # Force info location.
+
 HORIZONTAL_GAP = 200
 HOFFSET = 40
 ROW_OFFSET = 20
@@ -74,10 +56,8 @@ else:
 MAX_CHARS = 96
 MAX_WIDTH = MAX_CHARS * CHAR_WIDTH + HORIZONTAL_GAP
 MAX_HEIGHT = MAX_LINES * CHAR_HEIGHT
-TERMINAL_WIDTH = 80
 
 # Constants
-
 DATE_FORMAT = "%Y-%m-%d"
 DAY = 24 * 60 * 60      # Seconds in a day
 SOURCE_FOLDER = '.'
@@ -92,29 +72,22 @@ white = (255, 255, 255, 255)
 darkblue = (3, 3, 90, 255)
 lightblue = (100, 100, 120, 255)
 transparent = (0, 0, 0, 0)
+
+deepnavy = (30, 34, 42, 255)     # Background (Deep Navy/Gray)
+silver =(171, 178, 191, 255)     # Primary Text (Off-white/Silver)
+skyblue = (97, 175, 239, 255)    # Blue (File Names/Identifiers)
 colors1 = [
-    (230, 25, 75, 255),     # red
-    (60, 180, 75, 255),     # green
-    (255, 225, 25, 255),    # yellow
-    (0, 130, 200, 255),     # blue
-    (245, 130, 48, 255),    # orange
-    (145, 30, 180, 255),    # purple
-    (70, 240, 240, 255),    # cyan
-    (240, 50, 230, 255),    # magenta
-    (210, 245, 60, 255),    # lime
-    (250, 190, 190, 255),   # pink
-    (0, 128, 128, 255),     # teal
-    (230, 190, 255, 255),   # lavender
-    (170, 110, 40, 255),    # brown
-    (255, 250, 200, 255),   # beige
-    (128, 0, 0, 255),       # maroon
-    (170, 255, 195, 255),   # mint
-    (128, 128, 0, 255),     # olive
-    (255, 215, 180, 255),   # coral
-    (0, 0, 128, 255)       # navy
+    (224, 200, 200, 255),  # Red 
+    (240, 113, 120, 255),  # Rose/Pink 
+    (180, 190, 254, 255),  # Lavender 
+    (82, 139, 255, 255),   # Deep Blue
+    (255, 204, 102, 255),  # Gold 
+    (198, 120, 221, 255),  # Purple
+    (86, 182, 194, 255),   # Cyan 
+    (115, 218, 202, 255),  # Mint/Teal
+    (229, 192, 123, 255),  # Yellow
+    (209, 154, 102, 255),  # Orange
 ]
-
-
 
 colors2 = [
     (60, 180, 75, 50),     # green
@@ -127,24 +100,17 @@ colors2 = [
 ]
 
 if COLOR_SCHEME == 1:
-    background = darkblue
-    info_color = white
-    filename_color = greenish
+    background = deepnavy
+    info_color = silver
+    filename_color = skyblue
     colors = colors1
-elif COLOR_SCHEME == 2:
+else:
     background = black
     info_color = greenish
     filename_color = white
     colors = colors2
-else:
-    background = lightblue
-    info_color = white
-    filename_color = white
-    colors = colors1
-
 
 # Variables
-
 authors = {}
 author_lines = {}
 
@@ -177,11 +143,11 @@ def getAuthorIndex(author):
 def filterFiles(root, name):
     # Expanded list of common binary file extensions
     binary_extensions = [
-        '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', 
-        '.zip', '.exe', '.bin', '.dll', '.pdf', '.doc', 
-        '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.rar', 
-        '.7z', '.iso', '.tar', '.gz', '.bz2', '.swf', 
-        '.class', '.apk', '.dmg', '.mp3', '.wav', '.mp4', 
+        '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff',
+        '.zip', '.exe', '.bin', '.dll', '.pdf', '.doc',
+        '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.rar',
+        '.7z', '.iso', '.tar', '.gz', '.bz2', '.swf',
+        '.class', '.apk', '.dmg', '.mp3', '.wav', '.mp4',
         '.avi', '.mov', '.mkv', '.flv', '.webm', '.jar',
         '.icns', '.pyc', '.ttf'
     ]
@@ -420,7 +386,6 @@ def cornerText(target, working_file_name):
         working_file_name, text, line_colors, 40, x, y)
     return overlaid
 
-MAX_MSG_LENGTH = 80
 def centerText(target, working_file_name, extra=False):
     text = []
     line_colors = []
@@ -533,7 +498,7 @@ def createImage(target, first=True, index=0, movie=False,
 
     # When making a movie adjust each frame to
     # the same height and width.
-    if movie and FORCE_WIDTH and not first:
+    if movie and FORCE_SIZE and not first:
         img = Image.open(connected)
         if img.size[0] < forced_width:
             blank = drawBlank('blank.png', forced_width -
@@ -549,19 +514,15 @@ def createImage(target, first=True, index=0, movie=False,
         img.close()
         del img
 
-    # Apply text overlay in the corner.
-    if CORNER_TEXT:
-        overlaid = cornerText(target, connected)
-        disk.cleanUp(connected)
-    else:
-        overlaid = connected
-
-    # Apply text overlay in the center.
     if info:
-        overlaid2 = centerText(target, overlaid, extra=True)
-        disk.cleanUp(overlaid)
+        if CORNER_TEXT: # Apply text overlay in the corner.
+            overlaid2 = cornerText(target, connected)
+            disk.cleanUp(connected)     
+        else:     # Apply text overlay in the center.
+            overlaid2 = centerText(target, connected, extra=True)
+            disk.cleanUp(connected)     
     else:
-        overlaid2 = overlaid
+        overlaid2 = connected   
 
     # Fill background under the image with the selected background color
     overlaid2 = image_tools.composite_over(overlaid2, background)
