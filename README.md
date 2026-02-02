@@ -17,9 +17,9 @@ usage: birdseye.py [-h] [--target TARGET] [--movie] [--revs REVS] [--no_info]
 optional arguments:
   -h, --help       show this help message and exit
   --target TARGET  Target folder path.
-  --movie          Movie demo.
+  --movie          Generate a video of the repo changes over time.
   --revs REVS      Number of revisions to use in movie.
-  --no_info        Exlude text overlay of git commit information.
+  --no_info        Exclude text overlay of git commit information.
   --show_age       Color code lines according to commit age AND author.
   --months MONTHS  Number of months to scale the color coding of commits to.
   --age_only       Only color code the lines by age, not author.
